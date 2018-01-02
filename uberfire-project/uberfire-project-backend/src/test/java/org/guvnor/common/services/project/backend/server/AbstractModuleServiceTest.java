@@ -108,6 +108,12 @@ public class AbstractModuleServiceTest {
             }
 
             @Override
+            public Object fork(Repository repository,
+                               OrganizationalUnit space) {
+                return null;
+            }
+
+            @Override
             public Module simpleModuleInstance(final org.uberfire.java.nio.file.Path parent) {
                 return null;
             }

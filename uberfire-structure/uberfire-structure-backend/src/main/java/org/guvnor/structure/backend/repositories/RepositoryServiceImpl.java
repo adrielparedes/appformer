@@ -503,4 +503,19 @@ public class RepositoryServiceImpl implements RepositoryService {
     public class NoActiveSpaceInTheContext extends RuntimeException {
 
     }
+
+    @Override
+    public Repository fork(OrganizationalUnit space,
+                           Repository remote) {
+
+        String alias = remote.getAlias();
+
+        if (configuredRepositories.containsAlias(alias)) {
+            throw new RepositoryAlreadyExistsException(alias);
+        }
+
+        configurationService.startBatch();
+
+        return null;
+    }
 }
