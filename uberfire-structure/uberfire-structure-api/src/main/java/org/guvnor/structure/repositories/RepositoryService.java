@@ -93,4 +93,7 @@ public interface RepositoryService {
      * by other services while removing other constructs (such as an entire space).
      */
     void removeRepositories(final Space space, final Set<String> aliases);
+
+    Repository fork(Space space,
+                    Repository remote);
 }

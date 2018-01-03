@@ -15,10 +15,6 @@
 
 package org.guvnor.structure.backend.repositories;
 
-import static org.guvnor.structure.repositories.EnvironmentParameters.SCHEME;
-import static org.guvnor.structure.server.config.ConfigType.REPOSITORY;
-import static org.uberfire.backend.server.util.Paths.convert;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -65,6 +60,10 @@ import org.uberfire.rpc.SessionInfo;
 import org.uberfire.security.authz.AuthorizationManager;
 import org.uberfire.spaces.Space;
 import org.uberfire.spaces.SpacesAPI;
+
+import static org.guvnor.structure.repositories.EnvironmentParameters.SCHEME;
+import static org.guvnor.structure.server.config.ConfigType.REPOSITORY;
+import static org.uberfire.backend.server.util.Paths.convert;
 
 @Service
 @ApplicationScoped
@@ -505,17 +504,9 @@ public class RepositoryServiceImpl implements RepositoryService {
     }
 
     @Override
-    public Repository fork(OrganizationalUnit space,
+    public Repository fork(Space space,
                            Repository remote) {
-
         String alias = remote.getAlias();
-
-        if (configuredRepositories.containsAlias(alias)) {
-            throw new RepositoryAlreadyExistsException(alias);
-        }
-
-        configurationService.startBatch();
-
         return null;
     }
 }

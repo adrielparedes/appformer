@@ -50,12 +50,6 @@ public class CommonModalBuilder {
         return this;
     }
 
-    public CommonModalBuilder addBody(elemental2.dom.HTMLElement element) {
-        modal.add(buildPanel(element,
-                             new ModalBody()));
-        return this;
-    }
-
     public CommonModalBuilder addFooter(ModalFooter footer) {
         this.getModal().add(footer);
         return this;
@@ -100,12 +94,6 @@ public class CommonModalBuilder {
     }
 
     protected FlowPanel buildPanel(elemental2.dom.HTMLElement element,
-                                 FlowPanel panel) {
-        panel.add(build(element));
-        return panel;
-    }
-
-    private FlowPanel buildPanel(elemental2.dom.HTMLElement element,
                                  FlowPanel panel) {
         panel.add(build(element));
         return panel;
