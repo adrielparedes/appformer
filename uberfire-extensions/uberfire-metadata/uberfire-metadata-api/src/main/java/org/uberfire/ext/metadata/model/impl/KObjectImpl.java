@@ -16,6 +16,7 @@
 
 package org.uberfire.ext.metadata.model.impl;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.uberfire.ext.metadata.model.KObject;
