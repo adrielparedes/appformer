@@ -1,0 +1,7 @@
+
+message KObject {
+	message EmbeddedKObject {
+		required int32 aField = 1;
+	}
+	required EmbeddedKObject embedded = 1;
+}

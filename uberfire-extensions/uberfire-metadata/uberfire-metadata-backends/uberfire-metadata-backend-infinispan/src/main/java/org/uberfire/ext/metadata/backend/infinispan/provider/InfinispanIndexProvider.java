@@ -28,6 +28,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.infinispan.client.hotrod.Search;
 import org.infinispan.query.dsl.QueryFactory;
+import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
 import org.uberfire.ext.metadata.model.KCluster;
 import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.provider.IndexProvider;
@@ -53,6 +54,10 @@ public class InfinispanIndexProvider implements IndexProvider {
 
     @Override
     public void index(KObject kObject) {
+        this.infinispanContext.addProtobufSchema(kObject.getClusterId(),
+                                                 new Schema(kObject.getClusterId(),
+                                                            "org.appformer",
+                                                            Collections.emptySet()));
         this.infinispanContext.getCache().put(kObject.getId(),
                                               kObject);
     }
