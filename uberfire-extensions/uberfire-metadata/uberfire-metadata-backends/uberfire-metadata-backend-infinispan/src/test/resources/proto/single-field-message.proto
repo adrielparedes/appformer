@@ -1,0 +1,4 @@
+
+message KObject {
+	required int32 aField = 1;
+}

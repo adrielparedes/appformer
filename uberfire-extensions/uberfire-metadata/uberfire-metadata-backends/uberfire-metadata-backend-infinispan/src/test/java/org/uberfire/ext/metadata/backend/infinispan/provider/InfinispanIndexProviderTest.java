@@ -26,12 +26,16 @@ import org.apache.lucene.search.TermQuery;
 import org.arquillian.cube.docker.junit.rule.ContainerDslRule;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.impl.KObjectImpl;
 
 import static org.junit.Assert.*;
 
 public class InfinispanIndexProviderTest {
+
+    private Logger logger = LoggerFactory.getLogger(InfinispanIndexProviderTest.class);
 
     @ClassRule
     public static ContainerDslRule infinispan = new ContainerDslRule("jboss/infinispan-server:9.2.2.Final")

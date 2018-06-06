@@ -26,7 +26,7 @@ import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.KProperty;
 import org.uberfire.ext.metadata.model.impl.KObjectImpl;
 
-public class KObjectMarshaller implements MessageMarshaller<KObject> {
+public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
     public static final String SEGMENT_ID = "segmentId";
     public static final String CLUSTER_ID = "clusterId";
@@ -41,8 +41,13 @@ public class KObjectMarshaller implements MessageMarshaller<KObject> {
         this.typeName = typeName;
     }
 
+    public KObjectMarshaller() {
+
+        this.typeName = "";
+    }
+
     @Override
-    public KObject readFrom(ProtoStreamReader protoStreamReader) throws IOException {
+    public KObjectImpl readFrom(ProtoStreamReader protoStreamReader) throws IOException {
         String id = protoStreamReader.readString(ID);
         String type = protoStreamReader.readString(TYPE);
         String clusterId = protoStreamReader.readString(CLUSTER_ID);
@@ -62,7 +67,7 @@ public class KObjectMarshaller implements MessageMarshaller<KObject> {
 
     @Override
     public void writeTo(ProtoStreamWriter protoStreamWriter,
-                        KObject kObject) throws IOException {
+                        KObjectImpl kObject) throws IOException {
         protoStreamWriter.writeString(ID,
                                       kObject.getId());
         protoStreamWriter.writeString(TYPE,
@@ -78,8 +83,8 @@ public class KObjectMarshaller implements MessageMarshaller<KObject> {
     }
 
     @Override
-    public Class<? extends KObject> getJavaClass() {
-        return KObject.class;
+    public Class<? extends KObjectImpl> getJavaClass() {
+        return KObjectImpl.class;
     }
 
     @Override

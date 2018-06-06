@@ -17,26 +17,27 @@
 
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
-import java.io.IOException;
-
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
 import org.infinispan.protostream.SerializationContext;
-import org.infinispan.protostream.annotations.ProtoSchemaBuilder;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.uberfire.commons.lifecycle.Disposable;
 import org.uberfire.ext.metadata.backend.infinispan.proto.KObjectMarshallerProvider;
+import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
+import org.uberfire.ext.metadata.backend.infinispan.proto.schema.SchemaGenerator;
 import org.uberfire.ext.metadata.model.KObject;
 
 public class InfinispanContext implements Disposable {
 
     private final RemoteCacheManager cacheManager;
     private final SerializationContext serializationContext;
+    private final SchemaGenerator schemaGenerator;
 
     public InfinispanContext() {
+        schemaGenerator = new SchemaGenerator();
         ConfigurationBuilder builder = new ConfigurationBuilder();
         builder.addServer()
                 .host("127.0.0.1")
@@ -46,6 +47,7 @@ public class InfinispanContext implements Disposable {
 
         serializationContext = ProtoStreamMarshaller.getSerializationContext(cacheManager);
         serializationContext.registerMarshallerProvider(new KObjectMarshallerProvider());
+        serializationContext.registerProtoFiles();
     }
 
     private RemoteCache<String, String> getProtobufCache() {
@@ -57,15 +59,11 @@ public class InfinispanContext implements Disposable {
     }
 
     public void addProtobufSchema(String typeName,
-                                  ProtoSchemaBuilder protoSchemaBuilder) {
+                                  Schema schema) {
 
-        try {
-            RemoteCache<String, String> metadataCache = getProtobufCache();
-            metadataCache.put(typeName,
-                              protoSchemaBuilder.build(serializationContext));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        RemoteCache<String, String> metadataCache = getProtobufCache();
+        metadataCache.put(typeName + ".proto",
+                          this.schemaGenerator.generate(schema));
     }
 
     @Override
