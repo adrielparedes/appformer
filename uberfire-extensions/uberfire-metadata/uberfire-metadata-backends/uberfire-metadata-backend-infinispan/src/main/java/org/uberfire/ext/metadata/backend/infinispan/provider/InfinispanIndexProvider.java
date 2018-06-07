@@ -20,14 +20,19 @@ package org.uberfire.ext.metadata.backend.infinispan.provider;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.infinispan.client.hotrod.Search;
 import org.infinispan.query.dsl.QueryFactory;
+import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Field;
+import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Message;
+import org.uberfire.ext.metadata.backend.infinispan.proto.schema.ProtobufScope;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
 import org.uberfire.ext.metadata.model.KCluster;
 import org.uberfire.ext.metadata.model.KObject;
@@ -54,10 +59,39 @@ public class InfinispanIndexProvider implements IndexProvider {
 
     @Override
     public void index(KObject kObject) {
+
+        Set<Field> fields = new HashSet<>();
+        fields.add(new Field(ProtobufScope.REQUIRED,
+                             "String",
+                             "id",
+                             1));
+        fields.add(new Field(ProtobufScope.REQUIRED,
+                             "String",
+                             "type",
+                             2));
+        fields.add(new Field(ProtobufScope.REQUIRED,
+                             "String",
+                             "clusterId",
+                             3));
+        fields.add(new Field(ProtobufScope.REQUIRED,
+                             "String",
+                             "segmentId",
+                             4));
+        fields.add(new Field(ProtobufScope.REQUIRED,
+                             "String",
+                             "key",
+                             5));
+        fields.add(new Field(ProtobufScope.REQUIRED,
+                             "bool",
+                             "fullText",
+                             6));
+
         this.infinispanContext.addProtobufSchema(kObject.getClusterId(),
                                                  new Schema(kObject.getClusterId(),
                                                             "org.appformer",
-                                                            Collections.emptySet()));
+                                                            Collections.singleton(new Message(kObject.getType().getName(),
+                                                                                              Collections.emptySet(),
+                                                                                              fields))));
         this.infinispanContext.getCache().put(kObject.getId(),
                                               kObject);
     }

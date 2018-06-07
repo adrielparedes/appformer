@@ -17,11 +17,14 @@
 
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
+import java.io.IOException;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
+import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.SerializationContext;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.uberfire.commons.lifecycle.Disposable;
@@ -47,7 +50,6 @@ public class InfinispanContext implements Disposable {
 
         serializationContext = ProtoStreamMarshaller.getSerializationContext(cacheManager);
         serializationContext.registerMarshallerProvider(new KObjectMarshallerProvider());
-        serializationContext.registerProtoFiles();
     }
 
     private RemoteCache<String, String> getProtobufCache() {
@@ -62,8 +64,15 @@ public class InfinispanContext implements Disposable {
                                   Schema schema) {
 
         RemoteCache<String, String> metadataCache = getProtobufCache();
+        String proto = this.schemaGenerator.generate(schema);
+        try {
+            serializationContext.registerProtoFiles(FileDescriptorSource.fromString(typeName,
+                                                                                    proto));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         metadataCache.put(typeName + ".proto",
-                          this.schemaGenerator.generate(schema));
+                          proto);
     }
 
     @Override

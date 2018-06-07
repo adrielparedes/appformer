@@ -43,7 +43,7 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
     public KObjectMarshaller() {
 
-        this.typeName = "";
+        this.typeName = "java";
     }
 
     @Override
