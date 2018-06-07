@@ -29,6 +29,6 @@ public class KObjectMarshallerProvider implements SerializationContext.Marshalle
 
     @Override
     public BaseMarshaller<?> getMarshaller(Class<?> javaClass) {
-        return null;
+        return new KObjectMarshaller("org.appformer.String");
     }
 }
