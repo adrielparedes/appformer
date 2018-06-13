@@ -16,4 +16,9 @@
   -->
 
 <infinispan>
+  <cache-container>
+    <replicated-cache name="cache">
+      <indexing index="LOCAL" auto-config="true"/>
+    </replicated-cache>
+  </cache-container>
 </infinispan>

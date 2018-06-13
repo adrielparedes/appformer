@@ -53,6 +53,9 @@ public class SchemaGenerator {
     protected String buildMessage(Message message) {
         StringBuilder stringBuilder = new StringBuilder();
 
+        stringBuilder.append("/**\n" +
+                                     "  * @Indexed\n" +
+                                     "  */\n");
         stringBuilder.append("message");
         stringBuilder.append(" ");
         stringBuilder.append(message.getName());
@@ -80,6 +83,7 @@ public class SchemaGenerator {
 
         StringBuilder stringBuilder = new StringBuilder();
 
+        stringBuilder.append(this.buildIndex(field));
         stringBuilder.append(field.getScope().toString().toLowerCase());
         stringBuilder.append(" ");
         stringBuilder.append(field.getType());
@@ -90,5 +94,9 @@ public class SchemaGenerator {
         stringBuilder.append(";");
 
         return stringBuilder.toString();
+    }
+
+    private String buildIndex(Field field) {
+        return "";
     }
 }

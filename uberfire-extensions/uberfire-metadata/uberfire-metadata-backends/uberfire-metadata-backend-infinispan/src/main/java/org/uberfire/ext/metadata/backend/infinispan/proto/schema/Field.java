@@ -23,25 +23,59 @@ public class Field {
     private final String type;
     private final String name;
     private final int index;
+    private final boolean sortable;
+    private final boolean searchable;
 
     public Field(ProtobufScope scope,
                  String type,
                  String name,
                  int index) {
-        this.scope = scope;
-        this.type = type;
-        this.name = name;
-        this.index = index;
+        this(scope,
+             type,
+             name,
+             index,
+             false,
+             false);
     }
 
     public Field(ProtobufScope scope,
                  ProtobufType type,
                  String name,
                  int index) {
+        this(scope,
+             type,
+             name,
+             index,
+             false,
+             false);
+    }
+
+    public Field(ProtobufScope scope,
+                 ProtobufType type,
+                 String name,
+                 int index,
+                 boolean sortable,
+                 boolean searchable) {
+        this(scope,
+             type.toString(),
+             name,
+             index,
+             sortable,
+             searchable);
+    }
+
+    public Field(ProtobufScope scope,
+                 String type,
+                 String name,
+                 int index,
+                 boolean sortable,
+                 boolean searchable) {
         this.scope = scope;
-        this.type = type.toString();
+        this.type = type;
         this.name = name;
         this.index = index;
+        this.sortable = sortable;
+        this.searchable = searchable;
     }
 
     public ProtobufScope getScope() {
@@ -58,5 +92,13 @@ public class Field {
 
     public int getIndex() {
         return index;
+    }
+
+    public boolean isSortable() {
+        return sortable;
+    }
+
+    public boolean isSearchable() {
+        return searchable;
     }
 }

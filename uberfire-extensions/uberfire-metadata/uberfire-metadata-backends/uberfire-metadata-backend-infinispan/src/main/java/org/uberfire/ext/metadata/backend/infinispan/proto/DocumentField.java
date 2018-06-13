@@ -15,16 +15,25 @@
  *
  */
 
-package org.uberfire.ext.metadata.backend.infinispan.proto.schema;
+package org.uberfire.ext.metadata.backend.infinispan.proto;
 
-public enum ProtobufType {
-    STRING,
-    INT32,
-    BOOL;
+public class DocumentField {
 
-    @Override
-    public String toString() {
-        return this.name().toLowerCase();
+    private final String name;
+    private final Object value;
+
+    public DocumentField(String name,
+                         Object value) {
+
+        this.name = name;
+        this.value = value;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Object getValue() {
+        return value;
+    }
 }
