@@ -22,14 +22,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.infinispan.protostream.MessageMarshaller;
-import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.KProperty;
 import org.uberfire.ext.metadata.model.impl.KObjectImpl;
 
 public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
-    public static final String SEGMENT_ID = "segmentId";
-    public static final String CLUSTER_ID = "clusterId";
+    public static final String SEGMENT_ID = "segment";
+    public static final String CLUSTER_ID = "cluster";
     public static final String TYPE = "type";
     public static final String ID = "id";
     public static final String KEY = "key";
@@ -48,6 +47,7 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
     @Override
     public KObjectImpl readFrom(ProtoStreamReader protoStreamReader) throws IOException {
+
         String id = protoStreamReader.readString(ID);
         String type = protoStreamReader.readString(TYPE);
         String clusterId = protoStreamReader.readString(CLUSTER_ID);
@@ -68,18 +68,26 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
     @Override
     public void writeTo(ProtoStreamWriter protoStreamWriter,
                         KObjectImpl kObject) throws IOException {
+
         protoStreamWriter.writeString(ID,
                                       kObject.getId());
         protoStreamWriter.writeString(TYPE,
                                       kObject.getType().getName());
-        protoStreamWriter.writeString(CLUSTER_ID,
-                                      kObject.getClusterId());
-        protoStreamWriter.writeString(SEGMENT_ID,
-                                      kObject.getClusterId());
+        protoStreamWriter.writeObject(CLUSTER_ID,
+                                      new DocumentField("id",
+                                                        kObject.getClusterId()),
+                                      DocumentField.class);
+        protoStreamWriter.writeObject(SEGMENT_ID,
+                                      new DocumentField("id",
+                                                        kObject.getSegmentId()),
+                                      DocumentField.class);
         protoStreamWriter.writeString(KEY,
                                       kObject.getKey());
-        protoStreamWriter.writeBoolean(FULL_TEXT,
-                                       kObject.fullText());
+
+        if (kObject.fullText()) {
+            protoStreamWriter.writeString(FULL_TEXT,
+                                          "");
+        }
     }
 
     @Override

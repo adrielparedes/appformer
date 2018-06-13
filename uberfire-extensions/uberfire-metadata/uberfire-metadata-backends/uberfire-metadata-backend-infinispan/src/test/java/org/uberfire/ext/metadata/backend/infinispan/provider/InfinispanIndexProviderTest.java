@@ -48,7 +48,8 @@ public class InfinispanIndexProviderTest {
 
     @Test
     public void test() {
-        InfinispanIndexProvider provider = new InfinispanIndexProvider(new InfinispanContext());
+        InfinispanIndexProvider provider = new InfinispanIndexProvider(new InfinispanContext(),
+                                                                       new MappingProvider());
 
         KObject kObject = new KObjectImpl("1",
                                           "String",
@@ -60,10 +61,11 @@ public class InfinispanIndexProviderTest {
 
         provider.index(kObject);
 
-        List<KObject> results = provider.findByQuery(Arrays.asList("java"),
-                                                     new TermQuery(new Term("clusterId",
+        List<KObject> results = provider.findByQuery(Arrays.asList("org.appformer.String"),
+                                                     new TermQuery(new Term("cluster.id",
                                                                             "java")),
                                                      10);
+
 
         assertTrue(results.size() > 0);
     }

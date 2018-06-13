@@ -20,19 +20,14 @@ package org.uberfire.ext.metadata.backend.infinispan.provider;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.infinispan.client.hotrod.Search;
 import org.infinispan.query.dsl.QueryFactory;
-import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Field;
-import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Message;
-import org.uberfire.ext.metadata.backend.infinispan.proto.schema.ProtobufScope;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
 import org.uberfire.ext.metadata.model.KCluster;
 import org.uberfire.ext.metadata.model.KObject;
@@ -44,10 +39,13 @@ import static org.kie.soup.commons.validation.PortablePreconditions.checkNotNull
 public class InfinispanIndexProvider implements IndexProvider {
 
     private final InfinispanContext infinispanContext;
+    private final MappingProvider mappingProvider;
     private final QueryFactory queryFactory;
 
-    public InfinispanIndexProvider(InfinispanContext infinispanContext) {
+    public InfinispanIndexProvider(InfinispanContext infinispanContext,
+                                   MappingProvider mappingProvider) {
         this.infinispanContext = infinispanContext;
+        this.mappingProvider = mappingProvider;
         queryFactory = Search
                 .getQueryFactory(this.infinispanContext.getCache());
     }
@@ -60,38 +58,11 @@ public class InfinispanIndexProvider implements IndexProvider {
     @Override
     public void index(KObject kObject) {
 
-        Set<Field> fields = new HashSet<>();
-        fields.add(new Field(ProtobufScope.REQUIRED,
-                             "String",
-                             "id",
-                             1));
-        fields.add(new Field(ProtobufScope.REQUIRED,
-                             "String",
-                             "type",
-                             2));
-        fields.add(new Field(ProtobufScope.REQUIRED,
-                             "String",
-                             "clusterId",
-                             3));
-        fields.add(new Field(ProtobufScope.REQUIRED,
-                             "String",
-                             "segmentId",
-                             4));
-        fields.add(new Field(ProtobufScope.REQUIRED,
-                             "String",
-                             "key",
-                             5));
-        fields.add(new Field(ProtobufScope.REQUIRED,
-                             "bool",
-                             "fullText",
-                             6));
+        Schema schema = this.mappingProvider.getMapping(kObject);
 
-        this.infinispanContext.addProtobufSchema(kObject.getClusterId(),
-                                                 new Schema(kObject.getClusterId(),
-                                                            "org.appformer",
-                                                            Collections.singleton(new Message(kObject.getType().getName(),
-                                                                                              Collections.emptySet(),
-                                                                                              fields))));
+        this.infinispanContext.addProtobufSchema(kObject.getType().getName(),
+                                                 schema);
+
         this.infinispanContext.getCache().put(kObject.getId(),
                                               kObject);
     }
@@ -140,6 +111,7 @@ public class InfinispanIndexProvider implements IndexProvider {
     public List<KObject> findByQuery(List<String> indices,
                                      Query query,
                                      int limit) {
+
         return this.findByQuery(indices,
                                 query,
                                 null,

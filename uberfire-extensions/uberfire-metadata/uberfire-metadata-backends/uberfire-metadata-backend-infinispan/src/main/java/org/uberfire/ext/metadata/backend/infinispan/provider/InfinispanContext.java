@@ -24,6 +24,7 @@ import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.configuration.XMLStringConfiguration;
 import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.SerializationContext;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
@@ -48,6 +49,15 @@ public class InfinispanContext implements Disposable {
                 .marshaller(new ProtoStreamMarshaller());
         cacheManager = new RemoteCacheManager(builder.build());
 
+        cacheManager.administration().createCache("cache",
+                                                  new XMLStringConfiguration("<infinispan>\n" +
+                                                                                     "  <cache-container>\n" +
+                                                                                     "    <replicated-cache name=\"cache\">\n" +
+                                                                                     "      <indexing index=\"LOCAL\" auto-config=\"true\"/>\n" +
+                                                                                     "    </replicated-cache>\n" +
+                                                                                     "  </cache-container>\n" +
+                                                                                     "</infinispan>"));
+
         serializationContext = ProtoStreamMarshaller.getSerializationContext(cacheManager);
         serializationContext.registerMarshallerProvider(new KObjectMarshallerProvider());
     }
@@ -57,7 +67,7 @@ public class InfinispanContext implements Disposable {
     }
 
     public RemoteCache<String, KObject> getCache() {
-        return this.cacheManager.getCache();
+        return this.cacheManager.getCache("cache");
     }
 
     public void addProtobufSchema(String typeName,

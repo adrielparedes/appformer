@@ -19,16 +19,33 @@ package org.uberfire.ext.metadata.backend.infinispan.proto;
 
 import org.infinispan.protostream.BaseMarshaller;
 import org.infinispan.protostream.SerializationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.uberfire.ext.metadata.model.impl.KObjectImpl;
 
 public class KObjectMarshallerProvider implements SerializationContext.MarshallerProvider {
 
+    private Logger logger = LoggerFactory.getLogger(KObjectMarshallerProvider.class);
+
     @Override
     public BaseMarshaller<?> getMarshaller(String typeName) {
-        return new KObjectMarshaller(typeName);
+
+        if (typeName.equals("Cluster")) {
+            return new DocumentFieldMarshaller();
+        } else {
+            return new KObjectMarshaller(typeName);
+        }
     }
 
     @Override
     public BaseMarshaller<?> getMarshaller(Class<?> javaClass) {
-        return new KObjectMarshaller("org.appformer.String");
+
+        if (javaClass.equals(KObjectImpl.class)) {
+            return new KObjectMarshaller("org.appformer.String");
+        } else if (javaClass.equals(DocumentField.class)) {
+            return new DocumentFieldMarshaller();
+        } else {
+            return null;
+        }
     }
 }
