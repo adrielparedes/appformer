@@ -30,11 +30,7 @@ public class KObjectMarshallerProvider implements SerializationContext.Marshalle
     @Override
     public BaseMarshaller<?> getMarshaller(String typeName) {
 
-        if (typeName.equals("Cluster")) {
-            return new DocumentFieldMarshaller();
-        } else {
-            return new KObjectMarshaller(typeName);
-        }
+        return new KObjectMarshaller(typeName);
     }
 
     @Override
@@ -42,8 +38,6 @@ public class KObjectMarshallerProvider implements SerializationContext.Marshalle
 
         if (javaClass.equals(KObjectImpl.class)) {
             return new KObjectMarshaller("org.appformer.String");
-        } else if (javaClass.equals(DocumentField.class)) {
-            return new DocumentFieldMarshaller();
         } else {
             return null;
         }

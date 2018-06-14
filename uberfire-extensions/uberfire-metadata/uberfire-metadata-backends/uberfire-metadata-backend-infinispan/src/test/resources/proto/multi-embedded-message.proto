@@ -1,10 +1,6 @@
 
 message KObject {
 
-	message Cluster {
-		required string id = 1;
-	}
-
 	message AnotherEmbeddedKObject {
 		required int32 aField = 1;
 	}
@@ -14,6 +10,5 @@ message KObject {
 
 	required EmbeddedKObject embedded = 1;
 	required EmbeddedKObject anotherEmbedded = 2;
-	required Cluster = 3;
 
 }
