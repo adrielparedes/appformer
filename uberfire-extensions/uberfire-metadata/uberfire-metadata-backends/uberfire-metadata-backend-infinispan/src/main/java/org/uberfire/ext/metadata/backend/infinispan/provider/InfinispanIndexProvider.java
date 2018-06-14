@@ -194,9 +194,12 @@ public class InfinispanIndexProvider implements IndexProvider {
                                     Query query,
                                     Optional<String> orderBy) {
 
+        String queryString = query.toString().replaceAll("\\.",
+                                                         "__");
+
         String mainQuery = MessageFormat.format("from {0} where {1}",
                                                 index,
-                                                query);
+                                                queryString);
 
         return orderBy.map(order -> MessageFormat.format("{0} order by {1}",
                                                          mainQuery,

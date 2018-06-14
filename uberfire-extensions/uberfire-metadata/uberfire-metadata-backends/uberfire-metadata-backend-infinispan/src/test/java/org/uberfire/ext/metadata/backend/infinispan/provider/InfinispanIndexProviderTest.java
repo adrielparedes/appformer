@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.impl.KObjectImpl;
+import org.uberfire.ext.metadata.model.impl.KPropertyImpl;
 
 import static org.junit.Assert.*;
 
@@ -51,21 +52,24 @@ public class InfinispanIndexProviderTest {
         InfinispanIndexProvider provider = new InfinispanIndexProvider(new InfinispanContext(),
                                                                        new MappingProvider());
 
+        KPropertyImpl<String> prop = new KPropertyImpl<>("aParentField.withSubfield",
+                                                         "theValue",
+                                                         true);
+
         KObject kObject = new KObjectImpl("1",
                                           "String",
                                           "java",
                                           "java",
                                           "key",
-                                          Collections.emptyList(),
+                                          Collections.singletonList(prop),
                                           true);
 
         provider.index(kObject);
 
         List<KObject> results = provider.findByQuery(Arrays.asList("org.appformer.String"),
                                                      new TermQuery(new Term("cluster.id",
-                                                                            "java")),
+                                                                            "\"java\"")),
                                                      10);
-
 
         assertTrue(results.size() > 0);
     }

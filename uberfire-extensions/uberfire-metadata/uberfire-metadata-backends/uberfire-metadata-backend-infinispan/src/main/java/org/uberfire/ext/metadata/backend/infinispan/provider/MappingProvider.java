@@ -19,6 +19,7 @@ package org.uberfire.ext.metadata.backend.infinispan.provider;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Field;
@@ -27,6 +28,7 @@ import org.uberfire.ext.metadata.backend.infinispan.proto.schema.ProtobufScope;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.ProtobufType;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
 import org.uberfire.ext.metadata.model.KObject;
+import org.uberfire.ext.metadata.model.KProperty;
 
 public class MappingProvider {
 
@@ -52,14 +54,14 @@ public class MappingProvider {
                              "type",
                              2));
         fields.add(new Field(ProtobufScope.REQUIRED,
-                             "Cluster",
-                             "cluster",
+                             ProtobufType.STRING,
+                             "cluster__id",
                              3,
                              true,
                              true));
         fields.add(new Field(ProtobufScope.REQUIRED,
-                             "Segment",
-                             "segment",
+                             ProtobufType.STRING,
+                             "segment__id",
                              4));
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
@@ -70,26 +72,37 @@ public class MappingProvider {
                              "fullText",
                              6));
 
-        Message segment = new Message("Segment",
-                                      Collections.emptySet(),
-                                      Collections.singleton(new Field(ProtobufScope.REQUIRED,
-                                                                      ProtobufType.STRING,
-                                                                      "id",
-                                                                      1)));
+        int index = 7;
+        Iterator<KProperty<?>> iterator = kObject.getProperties().iterator();
+        if (iterator.hasNext()) {
+            KProperty<?> prop = iterator.next();
+            fields.add(new Field(ProtobufScope.REQUIRED,
+                                 this.buildType(prop.getValue()),
+                                 this.sanitize(prop.getName()),
+                                 index,
+                                 prop.isSortable(),
+                                 prop.isSearchable()));
+            index++;
+        }
 
-        Message cluster = new Message("Cluster",
-                                      Collections.emptySet(),
-                                      Collections.singleton(new Field(ProtobufScope.REQUIRED,
-                                                                      ProtobufType.STRING,
-                                                                      "id",
-                                                                      1)));
         Set<Message> messages = new HashSet<>();
-        messages.add(segment);
-        messages.add(cluster);
         Message message = new Message(kObject.getType().getName(),
                                       messages,
                                       fields);
 
         return Collections.singleton(message);
+    }
+
+    private String sanitize(String name) {
+        return name.replaceAll("\\.",
+                               "__");
+    }
+
+    private ProtobufType buildType(Object value) {
+        if (value.getClass() == Integer.class) {
+            return ProtobufType.INT32;
+        } else {
+            return ProtobufType.STRING;
+        }
     }
 }

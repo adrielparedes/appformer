@@ -97,6 +97,10 @@ public class SchemaGenerator {
     }
 
     private String buildIndex(Field field) {
-        return "";
+        if (field.isSearchable()) {
+            return "/* @Field(index=Index.YES, analyze = Analyze.YES, store = Store.YES) */";
+        } else {
+            return "";
+        }
     }
 }
