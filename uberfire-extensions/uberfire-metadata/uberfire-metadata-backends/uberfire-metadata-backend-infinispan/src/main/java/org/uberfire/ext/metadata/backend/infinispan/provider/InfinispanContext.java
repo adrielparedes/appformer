@@ -17,6 +17,11 @@
 
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
@@ -100,6 +105,12 @@ public class InfinispanContext implements Disposable {
     @Override
     public void dispose() {
         this.cacheManager.stop();
+    }
+
+    public List<String> getIndices() {
+        return this.cacheManager.getCacheNames()
+                .stream()
+                .collect(Collectors.toList());
     }
 }
 
