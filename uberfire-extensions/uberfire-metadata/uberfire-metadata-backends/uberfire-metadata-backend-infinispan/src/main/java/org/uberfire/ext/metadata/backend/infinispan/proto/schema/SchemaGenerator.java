@@ -27,10 +27,6 @@ public class SchemaGenerator {
     public String generate(Schema schema) {
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("package ");
-        stringBuilder.append(schema.getPkg());
-        stringBuilder.append(";\n");
-
         stringBuilder.append(this.buildMessages(schema.getMessages()));
 
         return stringBuilder.toString();

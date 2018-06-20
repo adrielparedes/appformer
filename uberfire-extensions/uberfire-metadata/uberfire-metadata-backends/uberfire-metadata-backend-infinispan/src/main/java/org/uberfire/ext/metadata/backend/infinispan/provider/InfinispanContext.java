@@ -17,27 +17,26 @@
 
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
-import java.io.IOException;
-
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
-import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
 import org.infinispan.commons.configuration.XMLStringConfiguration;
-import org.infinispan.protostream.FileDescriptorSource;
-import org.infinispan.protostream.SerializationContext;
+import org.infinispan.protostream.BaseMarshaller;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.uberfire.commons.lifecycle.Disposable;
-import org.uberfire.ext.metadata.backend.infinispan.proto.KObjectMarshallerProvider;
+import org.uberfire.ext.metadata.backend.infinispan.proto.KObjectMarshaller;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.SchemaGenerator;
 import org.uberfire.ext.metadata.model.KObject;
+import org.uberfire.ext.metadata.model.impl.KObjectImpl;
+
+import java.io.IOException;
 
 public class InfinispanContext implements Disposable {
 
     private final RemoteCacheManager cacheManager;
-    private final SerializationContext serializationContext;
+    private final KieProtostreamMarshaller marshaller = new KieProtostreamMarshaller();
     private final SchemaGenerator schemaGenerator;
 
     public InfinispanContext() {
@@ -46,7 +45,7 @@ public class InfinispanContext implements Disposable {
         builder.addServer()
                 .host("127.0.0.1")
                 .port(ConfigurationProperties.DEFAULT_HOTROD_PORT)
-                .marshaller(new ProtoStreamMarshaller());
+                .marshaller(marshaller);
         cacheManager = new RemoteCacheManager(builder.build());
 
         cacheManager.administration().createCache("cache",
@@ -58,8 +57,22 @@ public class InfinispanContext implements Disposable {
                                                                                      "  </cache-container>\n" +
                                                                                      "</infinispan>"));
 
-        serializationContext = ProtoStreamMarshaller.getSerializationContext(cacheManager);
-        serializationContext.registerMarshallerProvider(new KObjectMarshallerProvider());
+        marshaller.registerMarshaller(new KieProtostreamMarshaller.KieMarshallerSupplier<KObjectImpl>() {
+            @Override
+            public String extractTypeFromEntity(KObjectImpl entity) {
+                return entity.getType().getName();
+            }
+
+            @Override
+            public Class<KObjectImpl> getJavaClass() {
+                return KObjectImpl.class;
+            }
+
+            @Override
+            public BaseMarshaller<KObjectImpl> getMarshallerForType(String typeName) {
+                return new KObjectMarshaller(typeName);
+            }
+        });
     }
 
     private RemoteCache<String, String> getProtobufCache() {
@@ -76,8 +89,7 @@ public class InfinispanContext implements Disposable {
         RemoteCache<String, String> metadataCache = getProtobufCache();
         String proto = this.schemaGenerator.generate(schema);
         try {
-            serializationContext.registerProtoFiles(FileDescriptorSource.fromString(typeName,
-                                                                                    proto));
+            marshaller.registerSchema(typeName, proto, KObjectImpl.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
