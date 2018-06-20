@@ -64,12 +64,28 @@ public class InfinispanIndexProviderTest {
                                           Collections.singletonList(prop),
                                           true);
 
-        provider.index(kObject);
+        KObject anotherKObject = new KObjectImpl("2",
+                "MyType",
+                "cid",
+                "java",
+                "key",
+                Collections.singletonList(prop),
+                true);
 
-        List<KObject> results = provider.findByQuery(Arrays.asList("org.appformer.String"),
+        provider.index(kObject);
+        provider.index(anotherKObject);
+
+        List<KObject> results = provider.findByQuery(Arrays.asList("String"),
                                                      new TermQuery(new Term("cluster.id",
                                                                             "\"java\"")),
                                                      10);
+
+        assertTrue(results.size() > 0);
+
+        results = provider.findByQuery(Arrays.asList("MyType"),
+                new TermQuery(new Term("cluster.id",
+                        "\"cid\"")),
+                10);
 
         assertTrue(results.size() > 0);
     }

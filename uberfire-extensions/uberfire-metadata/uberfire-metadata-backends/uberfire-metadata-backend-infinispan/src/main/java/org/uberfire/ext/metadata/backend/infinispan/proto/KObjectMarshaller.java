@@ -58,11 +58,6 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
         this.typeName = typeName;
     }
 
-    public KObjectMarshaller() {
-
-        this.typeName = "java";
-    }
-
     @Override
     public KObjectImpl readFrom(ProtoStreamReader protoStreamReader) throws IOException {
 
