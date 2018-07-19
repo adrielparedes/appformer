@@ -27,10 +27,15 @@ import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Message;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.ProtobufScope;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.ProtobufType;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
+import org.uberfire.ext.metadata.backend.infinispan.utils.AttributesUtil;
 import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.KProperty;
 
 public class MappingProvider {
+
+    public MappingProvider() {
+
+    }
 
     public Schema getMapping(KObject kObject) {
         return this.buildProtobuf(kObject);
@@ -48,11 +53,15 @@ public class MappingProvider {
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
                              "id",
-                             1));
+                             1,
+                             true,
+                             true));
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
                              "type",
-                             2));
+                             2,
+                             true,
+                             true));
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
                              "cluster__id",
@@ -62,15 +71,21 @@ public class MappingProvider {
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
                              "segment__id",
-                             4));
+                             4,
+                             true,
+                             true));
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
                              "key",
-                             5));
+                             5,
+                             true,
+                             true));
         fields.add(new Field(ProtobufScope.REQUIRED,
                              ProtobufType.STRING,
                              "fullText",
-                             6));
+                             6,
+                             true,
+                             true));
 
         int index = 7;
         Iterator<KProperty<?>> iterator = kObject.getProperties().iterator();
@@ -80,13 +95,13 @@ public class MappingProvider {
                                  this.buildType(prop.getValue()),
                                  this.sanitize(prop.getName()),
                                  index,
-                                 prop.isSortable(),
-                                 prop.isSearchable()));
+                                 true,
+                                 true));
             index++;
         }
 
         Set<Message> messages = new HashSet<>();
-        Message message = new Message(kObject.getType().getName(),
+        Message message = new Message(sanitize(kObject.getType().getName()),
                                       messages,
                                       fields);
 
@@ -94,8 +109,7 @@ public class MappingProvider {
     }
 
     private String sanitize(String name) {
-        return name.replaceAll("\\.",
-                               "__");
+        return AttributesUtil.toProtobufFormat(name);
     }
 
     private ProtobufType buildType(Object value) {

@@ -18,17 +18,12 @@
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
 import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
-import org.apache.lucene.search.TermQuery;
 import org.infinispan.client.hotrod.Search;
 import org.infinispan.query.dsl.QueryFactory;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
@@ -37,6 +32,7 @@ import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.schema.MetaObject;
 import org.uberfire.ext.metadata.provider.IndexProvider;
 
+import static java.util.stream.Collectors.toList;
 import static org.kie.soup.commons.validation.PortablePreconditions.checkCondition;
 import static org.kie.soup.commons.validation.PortablePreconditions.checkNotEmpty;
 import static org.kie.soup.commons.validation.PortablePreconditions.checkNotNull;
@@ -45,14 +41,11 @@ public class InfinispanIndexProvider implements IndexProvider {
 
     private final InfinispanContext infinispanContext;
     private final MappingProvider mappingProvider;
-    private final QueryFactory queryFactory;
 
     public InfinispanIndexProvider(InfinispanContext infinispanContext,
                                    MappingProvider mappingProvider) {
         this.infinispanContext = infinispanContext;
         this.mappingProvider = mappingProvider;
-        queryFactory = Search
-                .getQueryFactory(this.infinispanContext.getCache());
     }
 
     @Override
@@ -68,6 +61,9 @@ public class InfinispanIndexProvider implements IndexProvider {
         this.infinispanContext.addProtobufSchema(kObject.getType().getName(),
                                                  schema);
 
+        this.infinispanContext.addType(kObject.getClusterId(),
+                                       kObject.getType().getName());
+
         this.infinispanContext.getCache(kObject.getClusterId()).put(kObject.getId(),
                                                                     kObject);
     }
@@ -77,7 +73,7 @@ public class InfinispanIndexProvider implements IndexProvider {
         Map<String, KObject> bulk = elements.stream().collect(Collectors.toMap(KObject::getId,
                                                                                kObject -> kObject));
 
-        this.infinispanContext.getCache().putAll(bulk);
+        this.infinispanContext.getCache("").putAll(bulk);
     }
 
     @Override
@@ -102,12 +98,19 @@ public class InfinispanIndexProvider implements IndexProvider {
     public List<KObject> findById(String index,
                                   String id) throws IOException {
 
-        Query query = new TermQuery(new Term(MetaObject.META_OBJECT_ID,
-                                             id));
-        List<KObject> found = this.findByQuery(Collections.singletonList(index),
-                                               query,
-                                               1);
-        return found;
+        List<String> types = this.infinispanContext.getTypes(index);
+
+        return types
+                .stream()
+                .map(type -> this.getQueryFactory(index)
+                        .from(type)
+                        .having(MetaObject.META_OBJECT_ID)
+                        .eq(id)
+                        .build()
+                        .list())
+                .flatMap(x -> x.stream())
+                .map(x -> (KObject) x)
+                .collect(toList());
     }
 
     @Override
@@ -145,10 +148,7 @@ public class InfinispanIndexProvider implements IndexProvider {
                                      Query query,
                                      int limit) {
 
-        return this.findByQuery(indices,
-                                query,
-                                null,
-                                limit);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -157,44 +157,13 @@ public class InfinispanIndexProvider implements IndexProvider {
                                      Sort sort,
                                      int limit) {
 
-        List<String> indexes = indices;
-        if (indices.isEmpty()) {
-            indexes = this.getIndices();
-        }
-
-        Optional<String> orderBy = this.buildOrderBy(Optional.ofNullable(sort));
-
-        return indexes.stream()
-                .map(index -> this.createInfinispanQuery(index,
-                                                         query,
-                                                         orderBy).list())
-                .flatMap(x -> x.stream())
-                .map(x -> (KObject) x)
-                .distinct()
-                .collect(Collectors.toList());
-    }
-
-    private Optional<String> buildOrderBy(Optional<Sort> sort) {
-        return Optional.empty();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public long findHitsByQuery(List<String> indices,
                                 Query query) {
-
-        List<String> indexes = indices;
-        if (indices.isEmpty()) {
-            indexes = this.getIndices();
-        }
-
-        int totalHits = indexes
-                .stream()
-                .mapToInt(index -> this.createInfinispanQuery(index,
-                                                              query,
-                                                              Optional.empty()).getResultSize())
-                .sum();
-
-        return totalHits;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -202,44 +171,13 @@ public class InfinispanIndexProvider implements IndexProvider {
         return this.infinispanContext.getIndices();
     }
 
+    protected QueryFactory getQueryFactory(String index) {
+        return Search
+                .getQueryFactory(this.infinispanContext.getCache(index));
+    }
+
     @Override
     public void dispose() {
         this.infinispanContext.dispose();
-    }
-
-    private org.infinispan.query.dsl.Query createInfinispanQuery(String index,
-                                                                 Query query,
-                                                                 Optional<String> orderBy) {
-
-        checkNotEmpty(index,
-                      "index");
-        checkNotNull("query",
-                     query);
-
-        String queryString = this.buildQueryString(index,
-                                                   query,
-                                                   orderBy);
-        return this.getQueryFactory()
-                .create(queryString);
-    }
-
-    private String buildQueryString(String index,
-                                    Query query,
-                                    Optional<String> orderBy) {
-
-        String queryString = query.toString().replaceAll("\\.",
-                                                         "__");
-
-        String mainQuery = MessageFormat.format("from {0} where {1}",
-                                                index,
-                                                queryString);
-
-        return orderBy.map(order -> MessageFormat.format("{0} order by {1}",
-                                                         mainQuery,
-                                                         order)).orElse(mainQuery);
-    }
-
-    private QueryFactory getQueryFactory() {
-        return queryFactory;
     }
 }

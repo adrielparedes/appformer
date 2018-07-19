@@ -18,12 +18,16 @@
 package org.uberfire.ext.metadata.backend.infinispan.proto;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import org.infinispan.protostream.MessageMarshaller;
 import org.infinispan.protostream.descriptors.Descriptor;
+import org.infinispan.protostream.descriptors.FieldDescriptor;
+import org.infinispan.protostream.descriptors.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.uberfire.ext.metadata.model.KProperty;
@@ -33,11 +37,17 @@ import org.uberfire.ext.metadata.model.schema.MetaObject;
 import org.uberfire.java.nio.base.version.VersionHistory;
 import org.uberfire.java.nio.file.attribute.FileTime;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.uberfire.ext.metadata.backend.infinispan.utils.AttributesUtil.toKPropertyFormat;
+import static org.uberfire.ext.metadata.backend.infinispan.utils.AttributesUtil.toProtobufFormat;
 
 public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
     private Logger logger = LoggerFactory.getLogger(KObjectMarshaller.class);
+
+    public static final String CLUSTER_ID = toProtobufFormat(MetaObject.META_OBJECT_CLUSTER_ID);
+    public static final String SEGMENT_ID = toProtobufFormat(MetaObject.META_OBJECT_SEGMENT_ID);
 
     public static final String CHECKIN_COMMENT = "checkinComment";
     public static final String LAST_MODIFIED_BY = "lastModifiedBy";
@@ -45,17 +55,18 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
     public static final String CREATED_DATE = "createdDate";
     public static final String LAST_MODIFIED_DATE = "lastModifiedDate";
 
-    public static final String SEGMENT_ID = "segment__id";
-    public static final String CLUSTER_ID = "cluster__id";
-    public static final String TYPE = "type";
-    public static final String ID = "id";
-    public static final String KEY = "key";
-    public static final String FULL_TEXT = "fullText";
     private String typeName;
+    private final List<String> mainAttributes;
 
     public KObjectMarshaller(String typeName) {
 
         this.typeName = typeName;
+        this.mainAttributes = Arrays.asList(MetaObject.META_OBJECT_ID,
+                                            MetaObject.META_OBJECT_TYPE,
+                                            CLUSTER_ID,
+                                            SEGMENT_ID,
+                                            MetaObject.META_OBJECT_KEY,
+                                            MetaObject.META_OBJECT_FULL_TEXT);
     }
 
     @Override
@@ -65,22 +76,23 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
         List<KProperty<?>> properties = descriptor.getFields()
                 .stream()
+                .filter(fieldDescriptor -> !isMainAttribute(fieldDescriptor))
                 .filter(fieldDescriptor ->
                                 isExtension(descriptor.getName())
                 )
-                .map(field ->
-                             (KProperty<?>) new KPropertyImpl(this.toKPropertyFormat(field.getName()),
-                                                              field.getDefaultValue(),
-                                                              false)
+                .map(field -> (KProperty<?>) new KPropertyImpl(toKPropertyFormat(field.getName()),
+                                                               this.read(field,
+                                                                         protoStreamReader),
+                                                               false)
                 )
                 .collect(toList());
 
-        String id = protoStreamReader.readString(ID);
-        String type = protoStreamReader.readString(TYPE);
+        String id = protoStreamReader.readString(MetaObject.META_OBJECT_ID);
+        String type = protoStreamReader.readString(MetaObject.META_OBJECT_TYPE);
         String clusterId = protoStreamReader.readString(CLUSTER_ID);
         String segmentId = protoStreamReader.readString(SEGMENT_ID);
-        String key = protoStreamReader.readString(KEY);
-        String fullText = protoStreamReader.readString(FULL_TEXT);
+        String key = protoStreamReader.readString(MetaObject.META_OBJECT_KEY);
+        String fullText = protoStreamReader.readString(MetaObject.META_OBJECT_FULL_TEXT);
 
         return new KObjectImpl(id,
                                type,
@@ -95,22 +107,22 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
     public void writeTo(ProtoStreamWriter protoStreamWriter,
                         KObjectImpl kObject) throws IOException {
 
-        protoStreamWriter.writeString(ID,
+        protoStreamWriter.writeString(MetaObject.META_OBJECT_ID,
                                       kObject.getId());
-        protoStreamWriter.writeString(TYPE,
+        protoStreamWriter.writeString(MetaObject.META_OBJECT_TYPE,
                                       kObject.getType().getName());
         protoStreamWriter.writeString(CLUSTER_ID,
                                       kObject.getClusterId());
         protoStreamWriter.writeString(SEGMENT_ID,
                                       kObject.getSegmentId());
-        protoStreamWriter.writeString(KEY,
+        protoStreamWriter.writeString(MetaObject.META_OBJECT_KEY,
                                       kObject.getKey());
 
         kObject.getProperties()
                 .iterator()
                 .forEachRemaining(kProperty -> {
                     try {
-                        this.build(this.toProtobufFormat(kProperty.getName()),
+                        this.build(toProtobufFormat(kProperty.getName()),
                                    kProperty.getValue(),
                                    protoStreamWriter);
                     } catch (IOException e) {
@@ -120,8 +132,12 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
                 });
 
         if (kObject.fullText()) {
-            protoStreamWriter.writeString(FULL_TEXT,
-                                          "");
+            protoStreamWriter.writeString(MetaObject.META_OBJECT_FULL_TEXT,
+                                          StreamSupport.stream(kObject.getProperties().spliterator(),
+                                                               false)
+                                                  .filter(kProperty -> kProperty.isSearchable() && !(kProperty.getValue() instanceof Boolean))
+                                                  .map(kProperty -> String.valueOf(kProperty.getValue()).toLowerCase())
+                                                  .collect(joining("\n")));
         }
     }
 
@@ -229,21 +245,38 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
         }
     }
 
+    private Object read(FieldDescriptor field,
+                        ProtoStreamReader protoStreamReader) {
+        JavaType javaType = field.getJavaType();
+
+        try {
+            if (JavaType.INT.equals(javaType)) {
+                return protoStreamReader.readInt(field.getName());
+            } else if (JavaType.BOOLEAN.equals(javaType)) {
+                return protoStreamReader.readBoolean(field.getName());
+            } else if (JavaType.DOUBLE.equals(javaType)) {
+                return protoStreamReader.readDouble(field.getName());
+            } else if (JavaType.FLOAT.equals(javaType)) {
+                return protoStreamReader.readFloat(field.getName());
+            } else if (JavaType.LONG.equals(javaType)) {
+                return protoStreamReader.readLong(field.getName());
+            } else {
+                return protoStreamReader.readString(field.getName());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean isMainAttribute(FieldDescriptor fieldDescriptor) {
+        return this.getMainAttributes().contains(fieldDescriptor.getName());
+    }
+
     private boolean isExtension(final String name) {
-        return !(name.equals(MetaObject.META_OBJECT_ID) ||
-                name.equals(MetaObject.META_OBJECT_TYPE) ||
-                name.equals(this.toProtobufFormat(MetaObject.META_OBJECT_CLUSTER_ID)) ||
-                name.equals(this.toProtobufFormat(MetaObject.META_OBJECT_SEGMENT_ID)) ||
-                name.equals(MetaObject.META_OBJECT_KEY));
+        return !this.getMainAttributes().contains(name);
     }
 
-    private String toProtobufFormat(String value) {
-        return value.replaceAll("\\.",
-                                "__");
-    }
-
-    private String toKPropertyFormat(String value) {
-        return value.replaceAll("__",
-                                "\\.");
+    private List<String> getMainAttributes() {
+        return this.mainAttributes;
     }
 }

@@ -18,33 +18,39 @@
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
 import java.io.IOException;
-import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
-import org.infinispan.commons.configuration.XMLStringConfiguration;
 import org.infinispan.protostream.BaseMarshaller;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.uberfire.commons.lifecycle.Disposable;
 import org.uberfire.ext.metadata.backend.infinispan.proto.KObjectMarshaller;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.Schema;
 import org.uberfire.ext.metadata.backend.infinispan.proto.schema.SchemaGenerator;
+import org.uberfire.ext.metadata.backend.infinispan.utils.AttributesUtil;
 import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.impl.KObjectImpl;
 
-import java.io.IOException;
-
 public class InfinispanContext implements Disposable {
 
+    public static final String TYPES_CACHE = "types";
+    public static final String PROTO_EXTENSION = ".proto";
     private final RemoteCacheManager cacheManager;
     private final KieProtostreamMarshaller marshaller = new KieProtostreamMarshaller();
     private final SchemaGenerator schemaGenerator;
 
+    private final Map<String, List<String>> types = new HashMap<>();
+    private final InfinispanConfiguration infinispanConfiguration;
+
     public InfinispanContext() {
+        this.infinispanConfiguration = new InfinispanConfiguration();
         schemaGenerator = new SchemaGenerator();
         ConfigurationBuilder builder = new ConfigurationBuilder();
         builder.addServer()
@@ -53,19 +59,15 @@ public class InfinispanContext implements Disposable {
                 .marshaller(marshaller);
         cacheManager = new RemoteCacheManager(builder.build());
 
-        cacheManager.administration().createCache("cache",
-                                                  new XMLStringConfiguration("<infinispan>\n" +
-                                                                                     "  <cache-container>\n" +
-                                                                                     "    <replicated-cache name=\"cache\">\n" +
-                                                                                     "      <indexing index=\"LOCAL\" auto-config=\"true\"/>\n" +
-                                                                                     "    </replicated-cache>\n" +
-                                                                                     "  </cache-container>\n" +
-                                                                                     "</infinispan>"));
+        if (!this.getIndices().contains(TYPES_CACHE)) {
+            cacheManager.administration().createCache(TYPES_CACHE,
+                                                      this.infinispanConfiguration.getConfiguration(TYPES_CACHE));
+        }
 
         marshaller.registerMarshaller(new KieProtostreamMarshaller.KieMarshallerSupplier<KObjectImpl>() {
             @Override
             public String extractTypeFromEntity(KObjectImpl entity) {
-                return entity.getType().getName();
+                return AttributesUtil.toProtobufFormat(entity.getType().getName());
             }
 
             @Override
@@ -80,31 +82,70 @@ public class InfinispanContext implements Disposable {
         });
     }
 
+    public static InfinispanContext getInstance() {
+        return new InfinispanContext();
+    }
+
     private RemoteCache<String, String> getProtobufCache() {
         return this.cacheManager.getCache(ProtobufMetadataManagerConstants.PROTOBUF_METADATA_CACHE_NAME);
     }
 
-    public RemoteCache<String, KObject> getCache() {
-        return this.cacheManager.getCache("cache");
+    public RemoteCache<String, KObject> getCache(String index) {
+        if (!this.getIndices().contains(index)) {
+            cacheManager
+                    .administration()
+                    .createCache(index,
+                                 this.infinispanConfiguration.getConfiguration(index));
+        }
+        return this.cacheManager.getCache(index);
+    }
+
+    public List<String> getTypes(String index) {
+        return this.getTypesCache().getOrDefault(index,
+                                                 new ArrayList<>());
+    }
+
+    private Map<String, List<String>> getTypesCache() {
+//        return this.cacheManager.getCache("types");
+        return this.types;
+    }
+
+    public List<String> addType(String index,
+                                String type) {
+        List<String> types = this.getTypes(index);
+
+        String protoType = AttributesUtil.toProtobufFormat(type);
+
+        if (!types.contains(protoType)) {
+            types.add(protoType);
+        }
+
+        return this.getTypesCache().put(index,
+                                        types);
     }
 
     public void addProtobufSchema(String typeName,
                                   Schema schema) {
 
+        String protoTypeName = AttributesUtil.toProtobufFormat(typeName);
         RemoteCache<String, String> metadataCache = getProtobufCache();
         String proto = this.schemaGenerator.generate(schema);
         try {
-            marshaller.registerSchema(typeName, proto, KObjectImpl.class);
+            marshaller.registerSchema(protoTypeName,
+                                      proto,
+                                      KObjectImpl.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        metadataCache.put(typeName + ".proto",
+        metadataCache.put(protoTypeName + PROTO_EXTENSION,
                           proto);
     }
 
     @Override
     public void dispose() {
-        this.cacheManager.stop();
+        if (this.cacheManager.isStarted()) {
+            this.cacheManager.stop();
+        }
     }
 
     public List<String> getIndices() {

@@ -17,12 +17,9 @@
 
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.TermQuery;
 import org.arquillian.cube.docker.junit.rule.ContainerDslRule;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -34,12 +31,12 @@ import org.uberfire.ext.metadata.model.impl.KPropertyImpl;
 
 import static org.junit.Assert.*;
 
-public class InfinispanIndexProviderTest {
+public class InfinispanIndexProviderIntegrationTest {
 
-    private Logger logger = LoggerFactory.getLogger(InfinispanIndexProviderTest.class);
+    private Logger logger = LoggerFactory.getLogger(InfinispanIndexProviderIntegrationTest.class);
 
     @ClassRule
-    public static ContainerDslRule infinispan = new ContainerDslRule("jboss/infinispan-server:9.2.2.Final")
+    public static ContainerDslRule infinispan = new ContainerDslRule("jboss/infinispan-server:9.3.0.Final")
             .withEnvironment("APP_USER",
                              "user")
             .withEnvironment("APP_PASS",
@@ -59,33 +56,35 @@ public class InfinispanIndexProviderTest {
         KObject kObject = new KObjectImpl("1",
                                           "String",
                                           "java",
-                                          "java",
+                                          "j",
                                           "key",
                                           Collections.singletonList(prop),
                                           true);
 
         KObject anotherKObject = new KObjectImpl("2",
-                "MyType",
-                "cid",
-                "java",
-                "key",
-                Collections.singletonList(prop),
-                true);
+                                                 "MyType",
+                                                 "cid",
+                                                 "java",
+                                                 "key",
+                                                 Collections.singletonList(prop),
+                                                 true);
 
         provider.index(kObject);
         provider.index(anotherKObject);
 
-        List<KObject> results = provider.findByQuery(Arrays.asList("String"),
-                                                     new TermQuery(new Term("cluster.id",
-                                                                            "\"java\"")),
-                                                     10);
+        List<KObject> results = provider.getQueryFactory("java").from("String")
+                .having("segment__id")
+                .eq("j")
+                .and()
+                .having("key").eq("key")
+                .build().list();
 
         assertTrue(results.size() > 0);
 
-        results = provider.findByQuery(Arrays.asList("MyType"),
-                new TermQuery(new Term("cluster.id",
-                        "\"cid\"")),
-                10);
+        results = provider.getQueryFactory("cid").from("MyType")
+                .having("segment__id")
+                .eq("java")
+                .build().list();
 
         assertTrue(results.size() > 0);
     }
