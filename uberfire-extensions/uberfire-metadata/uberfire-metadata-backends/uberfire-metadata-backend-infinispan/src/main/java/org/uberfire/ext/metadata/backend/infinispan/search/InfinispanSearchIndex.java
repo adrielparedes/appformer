@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.infinispan.client.hotrod.Search;
-import org.infinispan.query.dsl.QueryBuilder;
 import org.infinispan.query.dsl.QueryFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,14 +62,14 @@ public class InfinispanSearchIndex implements SearchIndex {
         if (attrs == null || attrs.size() == 0) {
             return emptyList();
         }
-        List<String> queries =
+        List<QueryContainer> queries =
                 buildSearchByAttrsQuery(attrs,
                                         clusterSegments);
 
-        queries.forEach(query -> logger.info("Query: " + query.build().toString()));
+        queries.forEach(query -> logger.info("Query: " + query.getQuery()));
 
         return queries.stream()
-                .map(q -> q.build().list())
+                .map(q -> this.getQueryFactory(q.getIndex()).create(q.getQuery()).list())
                 .flatMap(x -> x.stream())
                 .map(o -> (KObject) o)
                 .filter(ko -> filter.accept(ko))
@@ -81,14 +80,15 @@ public class InfinispanSearchIndex implements SearchIndex {
     public int searchByAttrsHits(Map<String, ?> attrs,
                                  ClusterSegment... clusterSegments) {
 
-        List<String> queries =
+        List<QueryContainer> queries =
                 buildSearchByAttrsQuery(attrs,
                                         clusterSegments);
 
-        queries.forEach(query -> logger.info("Query: " + query.build().toString()));
+        queries.forEach(query -> logger.info("Query: " + query.getQuery()));
 
         return queries.stream()
-                .mapToInt(query -> query.build().getResultSize())
+                .map(queryContainer -> this.getQueryFactory(queryContainer.getIndex()).create(queryContainer.getQuery()))
+                .mapToInt(query -> query.getResultSize())
                 .sum();
     }
 
@@ -97,11 +97,11 @@ public class InfinispanSearchIndex implements SearchIndex {
                                         IOSearchService.Filter filter,
                                         ClusterSegment... clusterSegments) {
 
-        List<QueryBuilder> queries = buildFullTextSearchQueries(term,
-                                                                clusterSegments);
+        List<QueryContainer> queries = buildFullTextSearchQueries(term,
+                                                                  clusterSegments);
 
         List<KObject> hits = queries.stream()
-                .map(query -> query.build().list())
+                .map(queryContainer -> this.getQueryFactory(queryContainer.getIndex()).create(queryContainer.getQuery()).list())
                 .flatMap(x -> x.stream())
                 .map(x -> (KObject) x)
                 .filter(hit -> filter.accept(hit))
@@ -114,39 +114,41 @@ public class InfinispanSearchIndex implements SearchIndex {
     public int fullTextSearchHits(String term,
                                   ClusterSegment... clusterSegments) {
 
-        List<QueryBuilder> queries = buildFullTextSearchQueries(term,
-                                                                clusterSegments);
+        List<QueryContainer> queries = buildFullTextSearchQueries(term,
+                                                                  clusterSegments);
 
         return queries.stream()
-                .mapToInt(query -> query.build().getResultSize())
+                .map(queryContainer -> this.getQueryFactory(queryContainer.getIndex()).create(queryContainer.getQuery()))
+                .mapToInt(query -> query.getResultSize())
                 .sum();
     }
 
-    private List<QueryBuilder> buildFullTextSearchQueries(String term,
-                                                          ClusterSegment[] clusterSegments) {
-        List<QueryBuilder> queries =
+    private List<QueryContainer> buildFullTextSearchQueries(String term,
+                                                            ClusterSegment[] clusterSegments) {
+        List<QueryContainer> queries =
                 Arrays.asList(clusterSegments).stream()
                         .map(clusterSegment -> initializeQuery(clusterSegment))
                         .flatMap(x -> x.stream())
-                        .map(tuple -> wildcardQuery(
-                                term))
+                        .map(queryContainer -> new QueryContainer(queryContainer.getIndex(),
+                                                                  queryContainer.getQuery() + " AND " + this.queryBuilder.buildFullTextTermQuery(term)))
                         .collect(toList());
 
-        queries.forEach(query -> logger.info("Query: " + query.build().toString()));
+        queries.forEach(query -> logger.info("Query: " + query.getQuery()));
         return queries;
     }
 
-    private List<String> buildSearchByAttrsQuery(Map<String, ?> attrs,
-                                                 ClusterSegment[] clusterSegments) {
+    protected List<QueryContainer> buildSearchByAttrsQuery(Map<String, ?> attrs,
+                                                           ClusterSegment[] clusterSegments) {
 
         return Arrays.asList(clusterSegments).stream()
                 .map(clusterSegment -> initializeQuery(clusterSegment))
                 .flatMap(x -> x.stream())
-                .map(tuple -> attributesQuery(attrs))
+                .map(baseQuery -> new QueryContainer(baseQuery.getIndex(),
+                                                     baseQuery.getQuery() + " AND " + attributesQuery(attrs)))
                 .collect(toList());
     }
 
-    private String attributesQuery(Map<String, ?> attrs) {
+    protected String attributesQuery(Map<String, ?> attrs) {
 
         return attrs.entrySet()
                 .stream()
@@ -177,19 +179,19 @@ public class InfinispanSearchIndex implements SearchIndex {
         return this.queryBuilder.buildFullTextTermQuery(term);
     }
 
-    private List<String> initializeQuery(ClusterSegment clusterSegment) {
+    protected List<QueryContainer> initializeQuery(ClusterSegment clusterSegment) {
 
         String index = clusterSegment.getClusterId();
-        QueryFactory factory = this.getQueryFactory(index);
         List<String> types = this.infinispanContext.getTypes(index);
 
         return types.stream()
-                .map(type -> factory.from(type))
-                .map(qb -> baseQuery(clusterSegment))
+                .map(type -> this.queryBuilder.buildFromQuery(type))
+                .map(qb -> new QueryContainer(clusterSegment.getClusterId(),
+                                              qb + " where " + baseQuery(clusterSegment)))
                 .collect(toList());
     }
 
-    private String baseQuery(ClusterSegment clusterSegment) {
+    protected String baseQuery(ClusterSegment clusterSegment) {
 
         String query = this.queryBuilder.buildTermQuery(toProtobufFormat(MetaObject.META_OBJECT_CLUSTER_ID),
                                                         clusterSegment.getClusterId());
@@ -216,5 +218,25 @@ public class InfinispanSearchIndex implements SearchIndex {
     protected QueryFactory getQueryFactory(String index) {
         return Search
                 .getQueryFactory(this.infinispanContext.getCache(index));
+    }
+
+    protected class QueryContainer {
+
+        private String x;
+        private String y;
+
+        public QueryContainer(String x,
+                              String y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public String getIndex() {
+            return x;
+        }
+
+        public String getQuery() {
+            return y;
+        }
     }
 }

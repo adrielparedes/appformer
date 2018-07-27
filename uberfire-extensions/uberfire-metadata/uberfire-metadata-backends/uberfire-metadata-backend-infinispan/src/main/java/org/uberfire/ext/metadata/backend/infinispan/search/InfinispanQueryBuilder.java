@@ -65,6 +65,7 @@ public class InfinispanQueryBuilder {
         return new StringBuilder()
                 .append("from")
                 .append(" ")
+                .append("org.kie.")
                 .append(toProtobufFormat(type))
                 .toString();
     }
