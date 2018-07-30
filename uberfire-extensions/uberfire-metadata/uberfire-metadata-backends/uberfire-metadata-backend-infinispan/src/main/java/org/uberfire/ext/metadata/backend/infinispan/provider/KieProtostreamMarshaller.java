@@ -1,14 +1,14 @@
 package org.uberfire.ext.metadata.backend.infinispan.provider;
 
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
 import org.infinispan.commons.io.ByteBuffer;
 import org.infinispan.protostream.BaseMarshaller;
 import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.SerializationContext;
 import org.infinispan.protostream.impl.AnnotatedDescriptorImpl;
-
-import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A thread safe protostream marshaller supporting dynamic entities. Workaround until dynamic entities are supported on
@@ -29,30 +29,32 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
 
     /**
      * Registers a protobuf file
-     *
-     * @param fileName           The name of the file.
-     * @param contents           The contents of the file.
+     * @param fileName The name of the file.
+     * @param contents The contents of the file.
      * @param dynamicEntityClass The dynamic entity class.
-     *                           the types in the protobuf.
+     * the types in the protobuf.
      * @throws IOException in case the registration fails.
      */
-    void registerSchema(String fileName, String contents, Class<?> dynamicEntityClass) throws IOException {
-        getSerializationContext().registerProtoFiles(FileDescriptorSource.fromString(fileName, contents));
+    void registerSchema(String fileName,
+                        String contents,
+                        Class<?> dynamicEntityClass) throws IOException {
+        getSerializationContext().registerProtoFiles(FileDescriptorSource.fromString(fileName,
+                                                                                     contents));
         getSerializationContext().getFileDescriptors().entrySet().stream()
                 .filter(p -> p.getKey().equals(fileName))
                 .flatMap(fd -> fd.getValue().getMessageTypes().stream())
                 .map(AnnotatedDescriptorImpl::getName)
-                .forEach(t -> classByType.put(t, dynamicEntityClass));
+                .forEach(t -> classByType.put(t,
+                                              dynamicEntityClass));
     }
-
 
     /**
      * Registers a marshaller from a dynamic entity.
-     *
      * @param kieMarshallerSupplier The {@link KieMarshallerSupplier for the entity}
      */
     void registerMarshaller(final KieMarshallerSupplier kieMarshallerSupplier) {
-        supplierByClass.put(kieMarshallerSupplier.getJavaClass(), kieMarshallerSupplier);
+        supplierByClass.put(kieMarshallerSupplier.getJavaClass(),
+                            kieMarshallerSupplier);
         getSerializationContext().registerMarshallerProvider(new SerializationContext.MarshallerProvider() {
 
             @Override
@@ -66,7 +68,7 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
 
             @Override
             public BaseMarshaller<?> getMarshaller(Class<?> javaClass) {
-                if (javaClass.equals(kieMarshallerSupplier.getJavaClass())) {
+                if (kieMarshallerSupplier.getJavaClass().isAssignableFrom(javaClass)) {
                     return kieMarshallerSupplier.getMarshallerForType(type.get());
                 } else {
                     return null;
@@ -76,11 +78,15 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
     }
 
     @Override
-    protected ByteBuffer objectToBuffer(Object o, int estimatedSize) throws IOException, InterruptedException {
+    protected ByteBuffer objectToBuffer(Object o,
+                                        int estimatedSize) throws IOException, InterruptedException {
         try {
             String value = extractType(o);
-            if (value != null) type.set(value);
-            return super.objectToBuffer(o, estimatedSize);
+            if (value != null) {
+                type.set(value);
+            }
+            return super.objectToBuffer(o,
+                                        estimatedSize);
         } finally {
             type.set(null);
         }
@@ -101,7 +107,6 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
 
         /**
          * Extract the type for an entity.
-         *
          * @param entity The entity being marshalled
          * @return the fully qualified type for the entity
          */
@@ -117,7 +122,5 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
          * @return An instance of marshaller to unmarshall the supplied type.
          */
         BaseMarshaller<E> getMarshallerForType(String typeName);
-
     }
-
 }

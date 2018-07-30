@@ -64,19 +64,19 @@ public class InfinispanContext implements Disposable {
                                                       this.infinispanConfiguration.getConfiguration(TYPES_CACHE));
         }
 
-        marshaller.registerMarshaller(new KieProtostreamMarshaller.KieMarshallerSupplier<KObjectImpl>() {
+        marshaller.registerMarshaller(new KieProtostreamMarshaller.KieMarshallerSupplier<KObject>() {
             @Override
-            public String extractTypeFromEntity(KObjectImpl entity) {
+            public String extractTypeFromEntity(KObject entity) {
                 return AttributesUtil.toProtobufFormat(entity.getType().getName());
             }
 
             @Override
-            public Class<KObjectImpl> getJavaClass() {
-                return KObjectImpl.class;
+            public Class<KObject> getJavaClass() {
+                return KObject.class;
             }
 
             @Override
-            public BaseMarshaller<KObjectImpl> getMarshallerForType(String typeName) {
+            public BaseMarshaller<KObject> getMarshallerForType(String typeName) {
                 return new KObjectMarshaller(typeName);
             }
         });

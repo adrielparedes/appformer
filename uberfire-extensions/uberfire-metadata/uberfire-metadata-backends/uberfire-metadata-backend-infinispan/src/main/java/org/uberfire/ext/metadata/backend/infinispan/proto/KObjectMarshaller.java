@@ -30,6 +30,7 @@ import org.infinispan.protostream.descriptors.FieldDescriptor;
 import org.infinispan.protostream.descriptors.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.uberfire.ext.metadata.model.KObject;
 import org.uberfire.ext.metadata.model.KProperty;
 import org.uberfire.ext.metadata.model.impl.KObjectImpl;
 import org.uberfire.ext.metadata.model.impl.KPropertyImpl;
@@ -42,7 +43,7 @@ import static java.util.stream.Collectors.toList;
 import static org.uberfire.ext.metadata.backend.infinispan.utils.AttributesUtil.toKPropertyFormat;
 import static org.uberfire.ext.metadata.backend.infinispan.utils.AttributesUtil.toProtobufFormat;
 
-public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
+public class KObjectMarshaller implements MessageMarshaller<KObject> {
 
     private Logger logger = LoggerFactory.getLogger(KObjectMarshaller.class);
 
@@ -105,7 +106,7 @@ public class KObjectMarshaller implements MessageMarshaller<KObjectImpl> {
 
     @Override
     public void writeTo(ProtoStreamWriter protoStreamWriter,
-                        KObjectImpl kObject) throws IOException {
+                        KObject kObject) throws IOException {
 
         protoStreamWriter.writeString(MetaObject.META_OBJECT_ID,
                                       kObject.getId());
