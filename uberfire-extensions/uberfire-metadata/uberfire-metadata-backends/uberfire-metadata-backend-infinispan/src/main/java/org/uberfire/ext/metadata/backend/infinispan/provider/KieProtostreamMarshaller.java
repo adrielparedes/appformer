@@ -44,8 +44,7 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
                 .filter(p -> p.getKey().equals(fileName))
                 .flatMap(fd -> fd.getValue().getMessageTypes().stream())
                 .map(AnnotatedDescriptorImpl::getName)
-                .forEach(t -> classByType.put(t,
-                                              dynamicEntityClass));
+                .forEach(t -> classByType.put(t, dynamicEntityClass));
     }
 
     /**
@@ -53,8 +52,7 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
      * @param kieMarshallerSupplier The {@link KieMarshallerSupplier for the entity}
      */
     void registerMarshaller(final KieMarshallerSupplier kieMarshallerSupplier) {
-        supplierByClass.put(kieMarshallerSupplier.getJavaClass(),
-                            kieMarshallerSupplier);
+        supplierByClass.put(kieMarshallerSupplier.getJavaClass(), kieMarshallerSupplier);
         getSerializationContext().registerMarshallerProvider(new SerializationContext.MarshallerProvider() {
 
             @Override
@@ -93,9 +91,19 @@ public final class KieProtostreamMarshaller extends ProtoStreamMarshaller {
     }
 
     private String extractType(Object o) {
-        KieMarshallerSupplier<Object> marshallerSupplier = (KieMarshallerSupplier<Object>) supplierByClass.get(o.getClass());
+        KieMarshallerSupplier<Object> marshallerSupplier = (KieMarshallerSupplier<Object>) lookupSupplier(o.getClass());
         if (marshallerSupplier != null) {
             return marshallerSupplier.extractTypeFromEntity(o);
+        }
+        return null;
+    }
+
+    private KieMarshallerSupplier<?> lookupSupplier(Class<?> clazz) {
+        KieMarshallerSupplier<?> supplier = supplierByClass.get(clazz);
+        if (supplier != null) return supplier;
+        for (Class<?> superInterface : clazz.getInterfaces()) {
+            KieMarshallerSupplier<?> altSupplier = supplierByClass.get(superInterface);
+            if (altSupplier != null) return altSupplier;
         }
         return null;
     }

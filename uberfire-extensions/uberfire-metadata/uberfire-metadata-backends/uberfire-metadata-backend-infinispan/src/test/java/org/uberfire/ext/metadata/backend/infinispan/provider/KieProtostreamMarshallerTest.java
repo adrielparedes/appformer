@@ -136,6 +136,170 @@ public class KieProtostreamMarshallerTest {
         }
     }
 
+    @Test
+    public void testSingleProviderForClassHierarchy() throws Exception {
+        KieProtostreamMarshaller marshaller = new KieProtostreamMarshaller();
+
+        // Create some dynamic entities from the implementation class
+        EntityInterface entity1a = new EntityImpl(10, "FieldValue-1a");
+        EntityInterface entity1b = new EntityImpl(20, "FieldValue-1b");
+
+        // Create some dynamic entities from an anonymous class
+        EntityInterface entity2a = createEntityFromAnonymousClass(2, "FieldValue-2a");
+        EntityInterface entity2b = createEntityFromAnonymousClass(2, "FieldValue-2b");
+
+        // Register the protobuf files auto-generated from the dynamic entities
+        marshaller.registerSchema("entity1a.proto", entity1a.getProto(), EntityInterface.class);
+        marshaller.registerSchema("entity1b.proto", entity1b.getProto(), EntityInterface.class);
+        marshaller.registerSchema("entity2.proto", entity2a.getProto(), EntityInterface.class);
+        // No need to register 'entity2b' since the type is the same
+
+        // Register a single marshaller supplier for all the dynamic entities instances.
+        marshaller.registerMarshaller(new KieProtostreamMarshaller.KieMarshallerSupplier<EntityInterface>() {
+            @Override
+            public String extractTypeFromEntity(EntityInterface entity) {
+                return entity.getType();
+            }
+
+            @Override
+            public Class<EntityInterface> getJavaClass() {
+                return EntityInterface.class;
+            }
+
+            @Override
+            public BaseMarshaller<EntityInterface> getMarshallerForType(String typeName) {
+                return new EntityMarshaller(typeName);
+            }
+        });
+
+        // Marshall all dynamic entities
+        byte[] bytes1a = marshaller.objectToByteBuffer(entity1a);
+        byte[] bytes1b = marshaller.objectToByteBuffer(entity1b);
+        byte[] bytes2a = marshaller.objectToByteBuffer(entity2a);
+        byte[] bytes2b = marshaller.objectToByteBuffer(entity2b);
+
+
+        // Unmarshalls all objects above
+        EntityInterface fromBytes1a = (EntityInterface) marshaller.objectFromByteBuffer(bytes1a);
+        EntityInterface fromBytes1b = (EntityInterface) marshaller.objectFromByteBuffer(bytes1b);
+        EntityInterface fromBytes2a = (EntityInterface) marshaller.objectFromByteBuffer(bytes2a);
+        EntityInterface fromBytes2b = (EntityInterface) marshaller.objectFromByteBuffer(bytes2b);
+
+        // Check everything is unmarshalled correctly
+        assertEquals(entity1a.getId(), fromBytes1a.getId());
+        assertEquals(entity1a.getFieldValue(), fromBytes1a.getFieldValue());
+        assertEquals(entity1b.getId(), fromBytes1b.getId());
+        assertEquals(entity1b.getFieldValue(), fromBytes1b.getFieldValue());
+        assertEquals(entity2a.getId(), fromBytes2a.getId());
+        assertEquals(entity2a.getFieldValue(), fromBytes2a.getFieldValue());
+        assertEquals(entity2b.getId(), fromBytes2b.getId());
+        assertEquals(entity2b.getFieldValue(), fromBytes2b.getFieldValue());
+    }
+
+    private EntityInterface createEntityFromAnonymousClass(Integer id, String fieldValue) {
+        return new EntityInterface() {
+
+            @Override
+            public String getFieldValue() {
+                return fieldValue;
+            }
+
+            @Override
+            public Integer getId() {
+                return id;
+            }
+        };
+    }
+
+    interface EntityInterface {
+        default String getType() {
+            return "Type" + getId();
+        }
+
+        String getFieldValue();
+
+        Integer getId();
+
+        default String getProto() {
+            return String.format("message %s { required int32 id=1; required string fieldValue=2; }", getType());
+        }
+    }
+
+    class EntityImpl implements EntityInterface {
+
+        private final Integer id;
+        private final String fieldValue;
+
+        EntityImpl(Integer id, String fieldValue) {
+            this.id = id;
+            this.fieldValue = fieldValue;
+        }
+
+        @Override
+        public String getFieldValue() {
+            return fieldValue;
+        }
+
+        @Override
+        public Integer getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EntityImpl entity = (EntityImpl) o;
+            return Objects.equals(id, entity.id) &&
+                    Objects.equals(fieldValue, entity.fieldValue);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, fieldValue);
+        }
+
+        @Override
+        public String toString() {
+            return "EntityImpl{" +
+                    "id=" + id +
+                    ", fieldValue='" + fieldValue + '\'' +
+                    '}';
+        }
+    }
+
+    class EntityMarshaller implements MessageMarshaller<EntityInterface> {
+
+        private final String type;
+
+        EntityMarshaller(String type) {
+            this.type = type;
+        }
+
+        @Override
+        public EntityInterface readFrom(ProtoStreamReader reader) throws IOException {
+            Integer id = reader.readInt("id");
+            String fieldValue = reader.readString("fieldValue");
+            return new EntityImpl(id, fieldValue);
+        }
+
+        @Override
+        public void writeTo(ProtoStreamWriter writer, EntityInterface obj) throws IOException {
+            writer.writeInt("id", obj.getId());
+            writer.writeString("fieldValue", obj.getFieldValue());
+        }
+
+        @Override
+        public Class<? extends EntityInterface> getJavaClass() {
+            return EntityInterface.class;
+        }
+
+        @Override
+        public String getTypeName() {
+            return type;
+        }
+    }
+
     class UUIDMarshaller implements MessageMarshaller<UUID> {
         @Override
         public UUID readFrom(ProtoStreamReader reader) throws IOException {
