@@ -39,6 +39,7 @@ import org.guvnor.structure.organizationalunit.RemoveOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.RepoAddedToOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.RepoRemovedFromOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.UpdatedOrganizationalUnitEvent;
+import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryService;
 import org.guvnor.structure.security.OrganizationalUnitAction;
@@ -123,6 +124,9 @@ public class OrganizationalUnitServiceTest {
     @Mock
     private ConfiguredRepositories configuredRepositories;
 
+    @Mock
+    private SpaceConfigStorage spaceConfigStorage;
+
     private OrganizationalUnitServiceImpl organizationalUnitService;
 
     @Before
@@ -148,7 +152,8 @@ public class OrganizationalUnitServiceTest {
                                                                       spacesAPI,
                                                                       sessionInfo,
                                                                       ioService,
-                                                                      configuredRepositories);
+                                                                      configuredRepositories,
+                                                                      spaceConfigStorage);
 
         organizationalUnitService.registeredOrganizationalUnits.put("A",
                                                                     orgUnit);

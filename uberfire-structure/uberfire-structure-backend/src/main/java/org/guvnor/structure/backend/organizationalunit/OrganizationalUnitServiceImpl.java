@@ -43,6 +43,9 @@ import org.guvnor.structure.organizationalunit.RemoveOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.RepoAddedToOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.RepoRemovedFromOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.UpdatedOrganizationalUnitEvent;
+import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
+import org.guvnor.structure.organizationalunit.config.SpaceInfo;
+import org.guvnor.structure.organizationalunit.config.SpaceState;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryEnvironmentUpdatedEvent;
 import org.guvnor.structure.repositories.RepositoryService;
@@ -103,6 +106,8 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
     private ConfiguredRepositories configuredRepositories;
 
+    private SpaceConfigStorage spaceConfigStorage;
+
     public OrganizationalUnitServiceImpl() {
     }
 
@@ -121,7 +126,8 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
                                          final SpacesAPI spaces,
                                          final SessionInfo sessionInfo,
                                          @Named("ioStrategy") final IOService ioService,
-                                         final ConfiguredRepositories configuredRepositories) {
+                                         final ConfiguredRepositories configuredRepositories,
+                                         final SpaceConfigStorage spaceConfigStorage) {
         this.configurationService = configurationService;
         this.configurationFactory = configurationFactory;
         this.organizationalUnitFactory = organizationalUnitFactory;
@@ -137,6 +143,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         this.sessionInfo = sessionInfo;
         this.ioService = ioService;
         this.configuredRepositories = configuredRepositories;
+        this.spaceConfigStorage = spaceConfigStorage;
     }
 
     @PostConstruct
@@ -156,7 +163,6 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
                 OrganizationalUnit ou = organizationalUnitFactory.newOrganizationalUnit(groupConfig);
                 registeredOrganizationalUnits.put(ou.getName(),
                                                   ou);
-                createSpaceConfigRepositoryIfNecessary(ouName);
             }
         }
         configuredRepositories.reloadRepositories();
@@ -268,11 +274,11 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
             newOrganizationalUnit = organizationalUnitFactory.newOrganizationalUnit(groupConfig);
             registeredOrganizationalUnits.put(newOrganizationalUnit.getName(),
                                               newOrganizationalUnit);
-            createSpaceConfigRepositoryIfNecessary(name);
 
             return newOrganizationalUnit;
         } finally {
             configurationService.endBatch();
+            setupSpaceConfigStorage(name);
             if (newOrganizationalUnit != null) {
                 newOrganizationalUnitEvent.fire(new NewOrganizationalUnitEvent(newOrganizationalUnit,
                                                                                getUserInfo(sessionInfo)));
@@ -280,20 +286,10 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         }
     }
 
-    private void createSpaceConfigRepositoryIfNecessary(final String spaceName) {
-        final URI configPath = URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT, spaceName));
-        final Map<String, Object> env = new HashMap<String, Object>() {{
-            put("init",
-                Boolean.TRUE);
-            put("internal",
-                Boolean.TRUE);
-        }};
-
-        try {
-            ioService.newFileSystem(configPath, env);
-        } catch (final FileSystemAlreadyExistsException ex) {
-            logger.info("Space " + spaceName + " config file system already exists.");
-        }
+    private void setupSpaceConfigStorage(final String spaceName) {
+        spaceConfigStorage.setup(spaceName);
+        spaceConfigStorage.saveSpaceInfo(new SpaceInfo(spaceName));
+        spaceConfigStorage.saveSpaceState(new SpaceState(false));
     }
 
     private List<String> getRepositoryAliases(final Collection<Repository> repositories) {

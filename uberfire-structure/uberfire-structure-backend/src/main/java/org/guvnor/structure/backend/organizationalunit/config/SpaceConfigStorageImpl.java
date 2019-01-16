@@ -25,6 +25,8 @@ import org.guvnor.structure.contributors.ContributorType;
 import org.guvnor.structure.organizationalunit.config.BranchPermissions;
 import org.guvnor.structure.organizationalunit.config.RolePermissions;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
+import org.guvnor.structure.organizationalunit.config.SpaceInfo;
+import org.guvnor.structure.organizationalunit.config.SpaceState;
 import org.uberfire.backend.server.io.object.ObjectStorage;
 import org.uberfire.spaces.SpacesAPI;
 import org.uberfire.util.URIUtil;
@@ -34,6 +36,8 @@ public class SpaceConfigStorageImpl implements SpaceConfigStorage {
     public static final String FILE_FORMAT = ".json";
 
     public static final String BRANCH_PERMISSIONS = "BranchPermissions";
+    public static final String SPACE_INFO = "SpaceInfo";
+    public static final String SPACE_STATE = "SpaceState";
 
     private ObjectStorage objectStorage;
 
@@ -46,7 +50,8 @@ public class SpaceConfigStorageImpl implements SpaceConfigStorage {
     }
 
     public void setup(final String spaceName) {
-        objectStorage.init(URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT, spaceName)));
+        objectStorage.init(URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT,
+                                                                            spaceName)));
     }
 
     @Override
@@ -83,11 +88,48 @@ public class SpaceConfigStorageImpl implements SpaceConfigStorage {
 
     BranchPermissions getDefaultBranchPermissions(String branchName) {
         final Map<String, RolePermissions> defaultPermissions = new LinkedHashMap<>();
-        defaultPermissions.put(ContributorType.OWNER.name(), new RolePermissions(ContributorType.OWNER.name(), true, true, true, true));
-        defaultPermissions.put(ContributorType.ADMIN.name(), new RolePermissions(ContributorType.ADMIN.name(), true, true, false, true));
-        defaultPermissions.put(ContributorType.CONTRIBUTOR.name(), new RolePermissions(ContributorType.CONTRIBUTOR.name(), true, true, false, false));
+        defaultPermissions.put(ContributorType.OWNER.name(),
+                               new RolePermissions(ContributorType.OWNER.name(),
+                                                   true,
+                                                   true,
+                                                   true,
+                                                   true));
+        defaultPermissions.put(ContributorType.ADMIN.name(),
+                               new RolePermissions(ContributorType.ADMIN.name(),
+                                                   true,
+                                                   true,
+                                                   false,
+                                                   true));
+        defaultPermissions.put(ContributorType.CONTRIBUTOR.name(),
+                               new RolePermissions(ContributorType.CONTRIBUTOR.name(),
+                                                   true,
+                                                   true,
+                                                   false,
+                                                   false));
 
-        return new BranchPermissions(branchName, defaultPermissions);
+        return new BranchPermissions(branchName,
+                                     defaultPermissions);
+    }
+
+    public SpaceInfo loadSpaceInfo() {
+        return objectStorage.read(buildSpaceConfigFilePath(SPACE_INFO));
+    }
+
+    @Override
+    public void saveSpaceInfo(final SpaceInfo spaceInfo) {
+        objectStorage.write(buildSpaceConfigFilePath(SPACE_INFO),
+                            spaceInfo);
+    }
+
+    @Override
+    public SpaceState loadSpaceState() {
+        return objectStorage.read(buildSpaceConfigFilePath(SPACE_STATE));
+    }
+
+    @Override
+    public void saveSpaceState(final SpaceState spaceState) {
+        objectStorage.write(buildSpaceConfigFilePath(SPACE_STATE),
+                            spaceState);
     }
 
     String buildSpaceConfigFilePath(final String configName) {

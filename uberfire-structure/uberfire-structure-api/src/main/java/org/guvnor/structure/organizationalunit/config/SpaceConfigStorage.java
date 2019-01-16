@@ -20,6 +20,14 @@ public interface SpaceConfigStorage {
 
     void setup(final String spaceName);
 
+    SpaceInfo loadSpaceInfo();
+
+    void saveSpaceInfo(final SpaceInfo spaceInfo);
+
+    SpaceState loadSpaceState();
+
+    void saveSpaceState(final SpaceState spaceState);
+
     BranchPermissions loadBranchPermissions(final String branchName,
                                             final String projectIdentifier);
 
