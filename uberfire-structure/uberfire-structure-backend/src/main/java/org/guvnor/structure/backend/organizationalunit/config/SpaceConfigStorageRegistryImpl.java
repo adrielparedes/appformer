@@ -35,6 +35,7 @@ public class SpaceConfigStorageRegistryImpl implements SpaceConfigStorageRegistr
     public SpaceConfigStorageRegistryImpl() {
     }
 
+
     @Inject
     public SpaceConfigStorageRegistryImpl(final Instance<SpaceConfigStorage> spaceConfigStorages) {
         this.spaceConfigStorages = spaceConfigStorages;

@@ -40,6 +40,7 @@ import org.guvnor.structure.organizationalunit.RepoAddedToOrganizationalUnitEven
 import org.guvnor.structure.organizationalunit.RepoRemovedFromOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.UpdatedOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
+import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageRegistry;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryService;
 import org.guvnor.structure.security.OrganizationalUnitAction;
@@ -56,6 +57,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.uberfire.io.IOService;
+import org.uberfire.java.nio.file.FileSystem;
 import org.uberfire.java.nio.file.Path;
 import org.uberfire.java.nio.fs.jgit.JGitFileSystem;
 import org.uberfire.java.nio.fs.jgit.JGitPathImpl;
@@ -125,7 +127,10 @@ public class OrganizationalUnitServiceTest {
     private ConfiguredRepositories configuredRepositories;
 
     @Mock
-    private SpaceConfigStorage spaceConfigStorage;
+    private SpaceConfigStorageRegistry spaceConfigStorageRegistry;
+
+    @Mock
+    private FileSystem systemFS;
 
     private OrganizationalUnitServiceImpl organizationalUnitService;
 
@@ -134,15 +139,9 @@ public class OrganizationalUnitServiceTest {
         sessionInfo = new SessionInfoMock();
         backward = new BackwardCompatibleUtil(configurationFactory);
         organizationalUnitFactory = spy(new OrganizationalUnitFactoryImpl(repositoryService,
-                                                                          backward,
-                                                                          spacesAPI,
-                                                                          configurationService,
-                                                                          configurationFactory));
-        organizationalUnitService = new OrganizationalUnitServiceImpl(configurationService,
-                                                                      configurationFactory,
-                                                                      organizationalUnitFactory,
+                                                                          spacesAPI));
+        organizationalUnitService = new OrganizationalUnitServiceImpl(organizationalUnitFactory,
                                                                       repoService,
-                                                                      backward,
                                                                       newOrganizationalUnitEvent,
                                                                       removeOrganizationalUnitEvent,
                                                                       repoAddedToOrgUnitEvent,
@@ -152,11 +151,9 @@ public class OrganizationalUnitServiceTest {
                                                                       spacesAPI,
                                                                       sessionInfo,
                                                                       ioService,
-                                                                      configuredRepositories,
-                                                                      spaceConfigStorage);
+                                                                      spaceConfigStorageRegistry,
+                                                                      systemFS);
 
-        organizationalUnitService.registeredOrganizationalUnits.put("A",
-                                                                    orgUnit);
         when(authorizationManager.authorize(any(Resource.class),
                                             any(User.class))).thenReturn(false);
     }
