@@ -122,29 +122,6 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         this.systemFS = systemFS;
     }
 
-    // TODO MigrationSystemGit
-    /*@PostConstruct
-    public void loadOrganizationalUnits() {
-        Collection<ConfigGroup> groups = configurationService.getConfiguration(ConfigType.SPACE);
-        if (groups != null) {
-            for (ConfigGroup groupConfig : groups) {
-                // Make sure existing Organizational Units are correctly initialized with a default group id.
-                String ouName = groupConfig.getName();
-                String defaultGroupId = groupConfig.getConfigItemValue("defaultGroupId");
-                if (defaultGroupId == null || defaultGroupId.trim().isEmpty()) {
-                    groupConfig.setConfigItem(configurationFactory.newConfigItem("defaultGroupId",
-                                                                                 getSanitizedDefaultGroupId(ouName)));
-                    configurationService.updateConfiguration(groupConfig);
-                }
-
-                OrganizationalUnit ou = organizationalUnitFactory.newOrganizationalUnit(groupConfig);
-                registeredOrganizationalUnits.put(ou.getName(),
-                                                  ou);
-            }
-        }
-        configuredRepositories.reloadRepositories();
-    }*/
-
     public void userRemoved(final @Observes UserDeletedEvent event) {
         final String removedUserIdentifier = event.getIdentifier();
         for (OrganizationalUnit organizationalUnit : getAllOrganizationalUnits()) {

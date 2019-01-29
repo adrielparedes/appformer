@@ -72,38 +72,4 @@ public class OrganizationalUnitFactoryImpl implements OrganizationalUnitFactory 
 
         return organizationalUnit;
     }
-
-    // TODO MigrationSystemGit
-    /*private void fillOrganizationalUnitContributors(final ConfigGroup configGroup,
-                                                    final OrganizationalUnit organizationalUnit) {
-        boolean shouldUpdateConfigGroup = false;
-
-        final String oldOwner = configGroup.getConfigItemValue("owner");
-        if (oldOwner != null) {
-            shouldUpdateConfigGroup = true;
-            organizationalUnit.getContributors().add(new Contributor(oldOwner, ContributorType.OWNER));
-            configGroup.removeConfigItem("owner");
-        }
-
-        ConfigItem<List<String>> oldContributors = configGroup.getConfigItem("contributors");
-        if (oldContributors != null) {
-            shouldUpdateConfigGroup = true;
-
-            for (String userName : oldContributors.getValue()) {
-                if (!userName.equals(oldOwner)) {
-                    organizationalUnit.getContributors().add(new Contributor(userName, ContributorType.CONTRIBUTOR));
-                }
-            }
-
-            configGroup.removeConfigItem("contributors");
-        }
-
-        if (!shouldUpdateConfigGroup) {
-            ConfigItem<List<Contributor>> newContributorsConfigItem = configGroup.getConfigItem("space-contributors");
-            newContributorsConfigItem.getValue().forEach(c -> organizationalUnit.getContributors().add(c));
-        } else {
-            configGroup.setConfigItem(configurationFactory.newConfigItem("space-contributors", organizationalUnit.getContributors()));
-            configurationService.updateConfiguration(configGroup);
-        }
-    }*/
 }
