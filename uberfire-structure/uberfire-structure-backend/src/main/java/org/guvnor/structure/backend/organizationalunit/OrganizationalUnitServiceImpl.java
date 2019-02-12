@@ -472,12 +472,12 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         }
     }
 
-    private java.nio.file.Path getNiogitPath() {
+    java.nio.file.Path getNiogitPath() {
         final JGitPathImpl systemGitPath = (JGitPathImpl) systemFS.getPath("system");
         return systemGitPath.getFileSystem().getGit().getRepository().getDirectory().getParentFile().getParentFile().toPath();
     }
 
-    private boolean spaceDirectoryExists(String spaceName) {
+    boolean spaceDirectoryExists(String spaceName) {
         return getNiogitPath().resolve(spaceName).toFile().exists();
     }
 }
