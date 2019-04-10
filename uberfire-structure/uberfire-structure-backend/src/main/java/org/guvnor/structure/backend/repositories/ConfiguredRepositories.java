@@ -20,17 +20,12 @@ import java.util.List;
 
 import org.guvnor.structure.repositories.Repository;
 import org.uberfire.backend.vfs.Path;
-import org.uberfire.java.nio.file.FileSystem;
 import org.uberfire.spaces.Space;
 
 public interface ConfiguredRepositories {
 
-    void reloadRepositories();
-
     Repository getRepositoryByRepositoryAlias(Space space,
                                               String alias);
-
-    Repository getRepositoryByRepositoryFileSystem(FileSystem fs);
 
     Repository getRepositoryByRootPath(Space space,
                                        Path root);
@@ -39,15 +34,4 @@ public interface ConfiguredRepositories {
 
     boolean containsAlias(Space space,
                           String alias);
-
-    Repository remove(Space space,
-                      String alias);
-
-    void add(Space space,
-             Repository alias);
-
-    void update(Space space,
-                Repository updatedRepo);
-
-    void refreshRepository(final Repository repository);
 }

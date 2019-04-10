@@ -25,6 +25,8 @@ import org.guvnor.structure.backend.config.ConfigurationFactoryImpl;
 import org.guvnor.structure.contributors.Contributor;
 import org.guvnor.structure.contributors.ContributorType;
 import org.guvnor.structure.organizationalunit.OrganizationalUnit;
+import org.guvnor.structure.organizationalunit.config.RepositoryConfiguration;
+import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
 import org.guvnor.structure.organizationalunit.config.SpaceInfo;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryService;
@@ -79,7 +81,7 @@ public class OrganizationalUnitFactoryImplTest {
         final SpaceInfo spaceInfo = new SpaceInfo("ou",
                                                   "groupId",
                                                   contributors,
-                                                  Collections.singletonList("repo1"),
+                                                  Collections.singletonList(new RepositoryInfo("repo1",false,new RepositoryConfiguration())),
                                                   Collections.singletonList("group1"));
 
         final OrganizationalUnit organizationalUnit = factory.newOrganizationalUnit(spaceInfo);

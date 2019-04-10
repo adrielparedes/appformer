@@ -39,6 +39,8 @@ import org.guvnor.structure.organizationalunit.RemoveOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.RepoAddedToOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.RepoRemovedFromOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.UpdatedOrganizationalUnitEvent;
+import org.guvnor.structure.organizationalunit.config.RepositoryConfiguration;
+import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageRegistry;
 import org.guvnor.structure.organizationalunit.config.SpaceInfo;
@@ -178,7 +180,8 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     public Collection<OrganizationalUnit> getOrganizationalUnits() {
         final List<OrganizationalUnit> result = new ArrayList<>();
         for (OrganizationalUnit ou : getAllOrganizationalUnits()) {
-            if (authorizationManager.authorize(ou, sessionInfo.getIdentity())
+            if (authorizationManager.authorize(ou,
+                                               sessionInfo.getIdentity())
                     || ou.getContributors().stream().anyMatch(c -> c.getUsername().equals(sessionInfo.getIdentity().getIdentifier()))) {
                 result.add(ou);
             }
@@ -236,12 +239,12 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         }
     }
 
-    private List<String> getRepositoryAliases(final Collection<Repository> repositories) {
-        final List<String> repositoryList = new ArrayList<>();
-        for (Repository repo : repositories) {
-            repositoryList.add(repo.getAlias());
-        }
-        return repositoryList;
+    private List<RepositoryInfo> getRepositoryAliases(final Collection<Repository> repositories) {
+        return repositories.stream()
+                .map(repository -> new RepositoryInfo(repository.getAlias(),
+                                                      false,
+                                                      new RepositoryConfiguration(repository.getEnvironment())))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -294,7 +297,8 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
             final List<Contributor> repositoryContributors = new ArrayList<>(repository.getContributors());
             final boolean repositoryContributorsChanged = repositoryContributors.retainAll(updatedOrganizationalUnit.getContributors());
             if (repositoryContributorsChanged) {
-                repositoryService.updateContributors(repository, repositoryContributors);
+                repositoryService.updateContributors(repository,
+                                                     repositoryContributors);
             }
         });
     }
@@ -308,7 +312,9 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
         if (spaceInfo != null) {
             try {
-                spaceInfo.getRepositories().add(repository.getAlias());
+                spaceInfo.getRepositories().add(new RepositoryInfo(repository.getAlias(),
+                                                                   false,
+                                                                   new RepositoryConfiguration(repository.getEnvironment())));
                 spaceConfigStorage.saveSpaceInfo(spaceInfo);
             } finally {
                 repoAddedToOrgUnitEvent.fire(new RepoAddedToOrganizationalUnitEvent(organizationalUnit,
@@ -329,7 +335,12 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
         if (spaceInfo != null) {
             try {
-                spaceInfo.getRepositories().remove(repository.getAlias());
+                spaceInfo.getRepositories()
+                        .stream()
+                        .filter(repositoryInfo -> repositoryInfo.getName().equals(repository.getAlias()) && !repositoryInfo.isDeleted())
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Repository not found"))
+                        .setDeleted(true);
                 spaceConfigStorage.saveSpaceInfo(spaceInfo);
             } finally {
                 repoRemovedFromOrgUnitEvent.fire(new RepoRemovedFromOrganizationalUnitEvent(organizationalUnit,
@@ -406,7 +417,8 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     }
 
     private void removeSpaceDirectory(final Space space) {
-        final URI configPathURI = URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT, space.getName()));
+        final URI configPathURI = URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT,
+                                                                                   space.getName()));
 
         final Path configPath = ioService.get(configPathURI);
         final JGitPathImpl configGitPath = (JGitPathImpl) configPath;

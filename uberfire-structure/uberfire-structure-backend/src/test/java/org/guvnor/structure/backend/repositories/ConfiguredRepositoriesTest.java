@@ -129,7 +129,7 @@ public class ConfiguredRepositoriesTest {
                                                                 repositoryFactory,
                                                                 SystemRepository.SYSTEM_REPO,
                                                                 repositoryUpdatedEvent,
-                                                                configurationFactory);
+                                                                configurationFactory,null);
 
         configuredRepositories.reloadRepositories();
     }

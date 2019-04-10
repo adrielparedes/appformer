@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.guvnor.structure.contributors.Contributor;
 import org.guvnor.structure.organizationalunit.OrganizationalUnit;
+import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
 import org.guvnor.structure.organizationalunit.config.SpaceInfo;
 import org.guvnor.structure.organizationalunit.impl.OrganizationalUnitImpl;
 import org.guvnor.structure.repositories.Repository;
@@ -48,12 +49,12 @@ public class OrganizationalUnitFactoryImpl implements OrganizationalUnitFactory 
         OrganizationalUnitImpl organizationalUnit = new OrganizationalUnitImpl(spaceInfo.getName(),
                                                                                spaceInfo.getDefaultGroupId());
 
-        final List<String> repositories = spaceInfo.getRepositories();
+        final List<RepositoryInfo> repositories = spaceInfo.getRepositories();
         if (repositories != null) {
-            for (String alias : repositories) {
+            for (RepositoryInfo alias : repositories) {
                 Space space = spacesAPI.getSpace(organizationalUnit.getName());
                 final Repository repo = repositoryService.getRepositoryFromSpace(space,
-                                                                                 alias);
+                                                                                 alias.getName());
                 if (repo != null) {
                     organizationalUnit.getRepositories().add(repo);
                 }

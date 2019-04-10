@@ -18,6 +18,8 @@ package org.guvnor.structure.organizationalunit.config;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.guvnor.structure.contributors.Contributor;
 import org.jboss.errai.common.client.api.annotations.MapsTo;
@@ -32,14 +34,14 @@ public class SpaceInfo {
 
     private Collection<Contributor> contributors;
 
-    private List<String> repositories;
+    private List<RepositoryInfo> repositories;
 
     private List<String> securityGroups;
 
     public SpaceInfo(@MapsTo("name") final String name,
                      @MapsTo("defaultGroupId") final String defaultGroupId,
                      @MapsTo("contributors") final Collection<Contributor> contributors,
-                     @MapsTo("repositories") final List<String> repositories,
+                     @MapsTo("repositories") final List<RepositoryInfo> repositories,
                      @MapsTo("securityGroups") final List<String> securityGroups) {
         this.name = name;
         this.defaultGroupId = defaultGroupId;
@@ -72,11 +74,15 @@ public class SpaceInfo {
         this.contributors = contributors;
     }
 
-    public List<String> getRepositories() {
+    public List<RepositoryInfo> getRepositories() {
         return repositories;
     }
 
-    public void setRepositories(List<String> repositories) {
+    public List<RepositoryInfo> getRepositories(Predicate<RepositoryInfo> query) {
+        return repositories.stream().filter(query).collect(Collectors.toList());
+    }
+
+    public void setRepositories(List<RepositoryInfo> repositories) {
         this.repositories = repositories;
     }
 
@@ -86,5 +92,9 @@ public class SpaceInfo {
 
     public void setSecurityGroups(List<String> securityGroups) {
         this.securityGroups = securityGroups;
+    }
+
+    public void removeRepository(String name) {
+        this.getRepositories().removeIf(repo -> repo.getName().equals(name));
     }
 }
