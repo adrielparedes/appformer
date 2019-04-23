@@ -71,31 +71,6 @@ public class GitRepositoryBuilder {
         this.branchAccessAuthorizer = branchAccessAuthorizer;
     }
 
-//    public Repository build(final ConfigGroup repoConfig) {
-//
-//        ConfigItem space = repoConfig.getConfigItem(EnvironmentParameters.SPACE);
-//        if (space == null) {
-//            throw new IllegalStateException("Repository " + repoConfig.getName() + " space is not valid");
-//        }
-//        repo = new GitRepository(repoConfig.getName(),
-//                                 spacesAPI.getSpace(space.getValue().toString()));
-//
-//        if (!repo.isValid()) {
-//            throw new IllegalStateException("Repository " + repoConfig.getName() + " not valid");
-//        } else {
-//
-//            addEnvironmentParameters(repoConfig.getItems());
-//
-//            FileSystem fileSystem = createFileSystem(repo);
-//
-//            setBranches(fileSystem);
-//
-//            setPublicURIs(fileSystem);
-//
-//            return repo;
-//        }
-//    }
-
     public Repository build(final RepositoryInfo repositoryInfo) {
 
         String space = repositoryInfo.getSpace();

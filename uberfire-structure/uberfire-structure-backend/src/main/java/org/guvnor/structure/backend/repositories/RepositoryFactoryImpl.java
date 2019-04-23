@@ -26,10 +26,7 @@ import javax.inject.Named;
 import org.guvnor.structure.backend.backcompat.BackwardCompatibleUtil;
 import org.guvnor.structure.contributors.Contributor;
 import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
-import org.guvnor.structure.repositories.EnvironmentParameters;
 import org.guvnor.structure.repositories.Repository;
-import org.guvnor.structure.server.config.ConfigGroup;
-import org.guvnor.structure.server.config.ConfigItem;
 import org.guvnor.structure.server.repositories.RepositoryFactory;
 import org.guvnor.structure.server.repositories.RepositoryFactoryHelper;
 
@@ -45,46 +42,6 @@ public class RepositoryFactoryImpl implements RepositoryFactory {
 
     @Inject
     private BackwardCompatibleUtil backward;
-
-    @Override
-    public Repository newRepository(final ConfigGroup repoConfig) {
-        checkNotNull("repoConfig",
-                     repoConfig);
-        final ConfigItem<String> schemeConfigItem = repoConfig.getConfigItem(EnvironmentParameters.SCHEME);
-        checkNotNull("schemeConfigItem",
-                     schemeConfigItem);
-
-        //Find a Helper that can create a repository
-        Repository repository = null;
-        for (RepositoryFactoryHelper helper : helpers) {
-            if (helper.accept(repoConfig)) {
-                repository = helper.newRepository(repoConfig);
-                break;
-            }
-        }
-
-        //Check one was created
-        if (repository == null) {
-            throw new IllegalArgumentException("Unrecognized scheme '" + schemeConfigItem.getValue() + "'.");
-        }
-
-        //Copy in Security Roles required to access this resource
-        ConfigItem<List<String>> groups = backward.compat(repoConfig).getConfigItem("security:groups");
-        if (groups != null) {
-            for (String group : groups.getValue()) {
-                repository.getGroups().add(group);
-            }
-        }
-
-        ConfigItem<List<Contributor>> contributors = repoConfig.getConfigItem("contributors");
-        if (contributors != null) {
-            for (Contributor contributor : contributors.getValue()) {
-                repository.getContributors().add(contributor);
-            }
-        }
-
-        return repository;
-    }
 
     @Override
     public Repository newRepository(RepositoryInfo repositoryInfo) {

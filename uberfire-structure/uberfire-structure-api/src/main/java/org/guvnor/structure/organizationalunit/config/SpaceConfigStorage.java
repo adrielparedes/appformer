@@ -37,4 +37,10 @@ public interface SpaceConfigStorage {
 
     void deleteBranchPermissions(final String branchName,
                                  final String projectIdentifier);
+
+    boolean isInitialized();
+
+    void startBatch();
+
+    void endBatch();
 }

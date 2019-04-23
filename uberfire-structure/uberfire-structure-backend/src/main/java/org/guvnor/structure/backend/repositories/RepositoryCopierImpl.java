@@ -143,7 +143,7 @@ public class RepositoryCopierImpl
     private void fireNewBranchEvent(final Path targetRoot,
                                     final org.uberfire.java.nio.file.Path nioTargetRepositoryRoot) {
 
-        configuredRepositories.reloadRepositories();
+//        configuredRepositories.reloadRepositories();
 
         final Repository repository = repositoryService.getRepository(targetRoot);
 
@@ -162,7 +162,7 @@ public class RepositoryCopierImpl
                                     final Path targetRoot,
                                     final org.uberfire.java.nio.file.Path nioTargetRepositoryRoot) {
 
-        configuredRepositories.reloadRepositories();
+//        configuredRepositories.reloadRepositories();
 
         final Repository repository = repositoryService.getRepository(space, targetRoot);
 

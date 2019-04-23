@@ -28,11 +28,8 @@ import javax.inject.Named;
 import org.guvnor.structure.backend.repositories.BranchAccessAuthorizer;
 import org.guvnor.structure.backend.repositories.git.hooks.PostCommitNotificationService;
 import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
-import org.guvnor.structure.repositories.EnvironmentParameters;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryExternalUpdateEvent;
-import org.guvnor.structure.server.config.ConfigGroup;
-import org.guvnor.structure.server.config.ConfigItem;
 import org.guvnor.structure.server.config.PasswordService;
 import org.guvnor.structure.server.repositories.RepositoryFactoryHelper;
 import org.uberfire.io.IOService;
@@ -79,39 +76,6 @@ public class GitRepositoryFactoryHelper implements RepositoryFactoryHelper {
     }
 
     @Override
-    public boolean accept(final ConfigGroup repoConfig) {
-        checkNotNull("repoConfig",
-                     repoConfig);
-        final ConfigItem<String> schemeConfigItem = repoConfig.getConfigItem(EnvironmentParameters.SCHEME);
-        checkNotNull("schemeConfigItem",
-                     schemeConfigItem);
-        return SCHEME.toString().equals(schemeConfigItem.getValue());
-    }
-
-    @Override
-    public Repository newRepository(final ConfigGroup repoConfig) {
-
-//        validate(repoConfig);
-//
-//        ConfigItem<String> sValue = repoConfig.getConfigItem(EnvironmentParameters.AVOID_INDEX);
-//
-//        if (sValue != null && Boolean.valueOf(sValue.getValue())) {
-//            return new GitRepositoryBuilder(notIndexedIOService,
-//                                            secureService,
-//                                            spacesAPI,
-//                                            repositoryExternalUpdate,
-//                                            postCommitNotificationService).build(repoConfig);
-//        }
-//
-//        return new GitRepositoryBuilder(indexedIOService,
-//                                        secureService,
-//                                        spacesAPI,
-//                                        repositoryExternalUpdate,
-//                                        postCommitNotificationService).build(repoConfig);
-        return null;
-    }
-
-    @Override
     public boolean accept(RepositoryInfo repositoryInfo) {
         checkNotNull("repositoryInfo",
                      repositoryInfo);
@@ -142,14 +106,6 @@ public class GitRepositoryFactoryHelper implements RepositoryFactoryHelper {
                                         repositoryExternalUpdate,
                                         postCommitNotificationService,
                                         branchAccessAuthorizer).build(repositoryInfo);
-    }
-
-    private void validate(ConfigGroup repoConfig) {
-        checkNotNull("repoConfig",
-                     repoConfig);
-        final ConfigItem<String> schemeConfigItem = repoConfig.getConfigItem(EnvironmentParameters.SCHEME);
-        checkNotNull("schemeConfigItem",
-                     schemeConfigItem);
     }
 
     private void validate(RepositoryInfo repositoryInfo) {

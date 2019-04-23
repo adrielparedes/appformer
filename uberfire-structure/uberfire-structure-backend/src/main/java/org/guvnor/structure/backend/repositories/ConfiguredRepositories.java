@@ -27,6 +27,10 @@ public interface ConfiguredRepositories {
     Repository getRepositoryByRepositoryAlias(Space space,
                                               String alias);
 
+    Repository getRepositoryByRepositoryAlias(Space space,
+                                              String alias,
+                                              boolean includeDeleted);
+
     Repository getRepositoryByRootPath(Space space,
                                        Path root);
 
@@ -34,4 +38,7 @@ public interface ConfiguredRepositories {
 
     boolean containsAlias(Space space,
                           String alias);
+
+    List<Repository> getAllConfiguredRepositories(Space space,
+                                                  boolean includeDeleted);
 }

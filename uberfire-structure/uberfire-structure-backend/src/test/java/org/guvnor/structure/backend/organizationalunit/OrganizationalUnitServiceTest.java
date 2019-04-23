@@ -22,15 +22,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import javax.enterprise.event.Event;
 
-import org.guvnor.structure.backend.backcompat.BackwardCompatibleUtil;
-import org.guvnor.structure.backend.config.ConfigurationFactoryImpl;
-import org.guvnor.structure.backend.repositories.ConfiguredRepositories;
 import org.guvnor.structure.contributors.Contributor;
 import org.guvnor.structure.contributors.ContributorType;
 import org.guvnor.structure.organizationalunit.NewOrganizationalUnitEvent;
@@ -53,12 +48,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 import org.uberfire.io.IOService;
 import org.uberfire.java.nio.file.FileSystem;
 import org.uberfire.java.nio.file.Path;
@@ -90,13 +81,7 @@ public class OrganizationalUnitServiceTest {
     @Mock
     private ConfigurationService configurationService;
 
-    @Spy
-    @InjectMocks
-    private ConfigurationFactoryImpl configurationFactory;
-
     private OrganizationalUnitFactoryImpl organizationalUnitFactory;
-
-    private BackwardCompatibleUtil backward;
 
     @Mock
     private Event<NewOrganizationalUnitEvent> newOrganizationalUnitEvent;
@@ -128,9 +113,6 @@ public class OrganizationalUnitServiceTest {
     private IOService ioService;
 
     @Mock
-    private ConfiguredRepositories configuredRepositories;
-
-    @Mock
     private SpaceConfigStorageRegistry spaceConfigStorageRegistry;
 
     @Mock
@@ -140,8 +122,20 @@ public class OrganizationalUnitServiceTest {
 
     @Before
     public void setUp() throws Exception {
+
+        doAnswer(invocationOnMock -> {
+            final SpaceConfigStorage spaceConfigStorage = mock(SpaceConfigStorage.class);
+            doReturn(new SpaceInfo((String) invocationOnMock.getArguments()[0],
+                                   "defaultGroupId",
+                                   Collections.emptyList(),
+                                   Collections.emptyList(),
+                                   Collections.emptyList())).when(spaceConfigStorage).loadSpaceInfo();
+            doReturn(true)
+                    .when(spaceConfigStorage).isInitialized();
+            return spaceConfigStorage;
+        }).when(spaceConfigStorageRegistry).get(any());
+
         sessionInfo = new SessionInfoMock();
-        backward = new BackwardCompatibleUtil(configurationFactory);
         organizationalUnitFactory = spy(new OrganizationalUnitFactoryImpl(repositoryService,
                                                                           spacesAPI));
         organizationalUnitService = spy(new OrganizationalUnitServiceImpl(organizationalUnitFactory,
@@ -162,41 +156,40 @@ public class OrganizationalUnitServiceTest {
                                             any(User.class))).thenReturn(false);
 
         doReturn(Paths.get("target/test-classes/niogit").toFile().toPath()).when(organizationalUnitService).getNiogitPath();
-
-        doAnswer(invocationOnMock -> {
-            final SpaceConfigStorage spaceConfigStorage = mock(SpaceConfigStorage.class);
-            doReturn(new SpaceInfo((String) invocationOnMock.getArguments()[0], "defaultGroupId", Collections.emptyList(), Collections.emptyList(), Collections.emptyList())).when(spaceConfigStorage).loadSpaceInfo();
-            return spaceConfigStorage;
-        }).when(spaceConfigStorageRegistry).get(any());
     }
 
     @Test
-    public void testAllOrgUnits() throws Exception {
+    public void testAllOrgUnits() {
         Collection<OrganizationalUnit> orgUnits = organizationalUnitService.getAllOrganizationalUnits();
-        assertEquals(2, orgUnits.size());
+        assertEquals(2,
+                     orgUnits.size());
     }
 
     @Test
-    public void testSecuredOrgUnits() throws Exception {
+    public void testSecuredOrgUnits() {
         Collection<OrganizationalUnit> orgUnits = organizationalUnitService.getOrganizationalUnits();
-        assertEquals(0, orgUnits.size());
+        assertEquals(0,
+                     orgUnits.size());
     }
 
     @Test
-    public void testSecuredOrgUnitsWithPermission() throws Exception {
+    public void testSecuredOrgUnitsWithPermission() {
         when(authorizationManager.authorize(any(Resource.class),
                                             any(User.class))).thenReturn(true);
         Collection<OrganizationalUnit> orgUnits = organizationalUnitService.getOrganizationalUnits();
-        assertEquals(2, orgUnits.size());
+        assertEquals(2,
+                     orgUnits.size());
     }
 
     @Test
-    public void testSecuredOrgUnitsToCollaborators() throws Exception {
-        when(orgUnit.getContributors()).thenReturn(Collections.singletonList(new Contributor("admin", ContributorType.OWNER)));
+    public void testSecuredOrgUnitsToCollaborators() {
+        when(orgUnit.getContributors()).thenReturn(Collections.singletonList(new Contributor("admin",
+                                                                                             ContributorType.OWNER)));
         doReturn(Collections.singletonList(orgUnit)).when(organizationalUnitService).getAllOrganizationalUnits();
 
         Collection<OrganizationalUnit> orgUnits = organizationalUnitService.getOrganizationalUnits();
-        assertEquals(1, orgUnits.size());
+        assertEquals(1,
+                     orgUnits.size());
     }
 
     @Test

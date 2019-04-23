@@ -147,7 +147,12 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
     @Override
     public OrganizationalUnit getOrganizationalUnit(final String name) {
-        return organizationalUnitFactory.newOrganizationalUnit(spaceConfigStorageRegistry.get(name).loadSpaceInfo());
+        SpaceInfo spaceInfo = spaceConfigStorageRegistry.get(name).loadSpaceInfo();
+        if (spaceInfo != null) {
+            return organizationalUnitFactory.newOrganizationalUnit(spaceInfo);
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -157,7 +162,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(getNiogitPath())) {
             for (java.nio.file.Path spacePath : stream) {
                 final File spaceDirectory = spacePath.toFile();
-                if (spaceDirectory.isDirectory() && !spaceDirectory.getName().equals("system")) {
+                if (spaceDirectory.isDirectory() && !spaceDirectory.getName().equals("system") && this.spaceConfigStorageRegistry.get(spaceDirectory.getName()).isInitialized()) {
                     spaces.add(getOrganizationalUnit(spaceDirectory.getName()));
                 }
             }
@@ -426,6 +431,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
         ioService.delete(configPath.getFileSystem().getPath(""));
         spacePath.delete();
+        this.spaceConfigStorageRegistry.remove(space.getName());
     }
 
     @Override
@@ -490,6 +496,6 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     }
 
     boolean spaceDirectoryExists(String spaceName) {
-        return getNiogitPath().resolve(spaceName).toFile().exists();
+        return getNiogitPath().resolve(spaceName).toFile().exists() && this.spaceConfigStorageRegistry.get(spaceName).isInitialized();
     }
 }

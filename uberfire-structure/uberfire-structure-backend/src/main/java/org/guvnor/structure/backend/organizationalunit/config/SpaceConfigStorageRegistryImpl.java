@@ -35,7 +35,6 @@ public class SpaceConfigStorageRegistryImpl implements SpaceConfigStorageRegistr
     public SpaceConfigStorageRegistryImpl() {
     }
 
-
     @Inject
     public SpaceConfigStorageRegistryImpl(final Instance<SpaceConfigStorage> spaceConfigStorages) {
         this.spaceConfigStorages = spaceConfigStorages;
@@ -43,10 +42,18 @@ public class SpaceConfigStorageRegistryImpl implements SpaceConfigStorageRegistr
 
     @Override
     public SpaceConfigStorage get(final String spaceName) {
-        return storageBySpaceName.computeIfAbsent(spaceName, name -> {
-            final SpaceConfigStorage spaceConfigStorage = spaceConfigStorages.get();
-            spaceConfigStorage.setup(spaceName);
-            return spaceConfigStorage;
-        });
+        return storageBySpaceName.computeIfAbsent(spaceName,
+                                                  name -> {
+                                                      final SpaceConfigStorage spaceConfigStorage = spaceConfigStorages.get();
+                                                      spaceConfigStorage.setup(spaceName);
+                                                      return spaceConfigStorage;
+                                                  });
+    }
+
+    @Override
+    public void remove(String spaceName) {
+        if (this.storageBySpaceName.containsKey(spaceName)) {
+            this.storageBySpaceName.remove(spaceName);
+        }
     }
 }
