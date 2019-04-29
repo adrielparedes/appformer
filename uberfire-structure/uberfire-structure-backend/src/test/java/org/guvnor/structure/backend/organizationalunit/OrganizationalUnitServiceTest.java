@@ -155,7 +155,7 @@ public class OrganizationalUnitServiceTest {
         when(authorizationManager.authorize(any(Resource.class),
                                             any(User.class))).thenReturn(false);
 
-        doReturn(Paths.get("target/test-classes/niogit").toFile().toPath()).when(organizationalUnitService).getNiogitPath();
+        doReturn(Paths.get("src/test/resources/niogit").toFile().toPath()).when(organizationalUnitService).getNiogitPath();
     }
 
     @Test

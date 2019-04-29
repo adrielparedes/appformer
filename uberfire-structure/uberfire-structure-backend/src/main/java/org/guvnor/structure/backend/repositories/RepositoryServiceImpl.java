@@ -366,7 +366,7 @@ public class RepositoryServiceImpl implements RepositoryService {
                                                                                                                     alias);
         SpaceConfigStorage configStorage = this.spaceConfigStorage.get(space.getName());
         try {
-            configStorage.startBatch();
+//            configStorage.startBatch();
             OrganizationalUnit orgUnit = Optional
                     .ofNullable(organizationalUnitService.getOrganizationalUnit(space.getName()))
                     .orElseThrow(() -> new IllegalArgumentException(String
@@ -381,7 +381,7 @@ public class RepositoryServiceImpl implements RepositoryService {
                          e);
             throw new RuntimeException(e);
         } finally {
-            configStorage.endBatch();
+//            configStorage.endBatch();
         }
     }
 
