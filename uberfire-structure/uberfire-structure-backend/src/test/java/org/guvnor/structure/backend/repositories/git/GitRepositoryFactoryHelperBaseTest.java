@@ -84,12 +84,12 @@ public abstract class GitRepositoryFactoryHelperBaseTest {
 
         spacesAPI = new SpacesAPIImpl();
 
-        helper = new GitRepositoryFactoryHelper(
-                notIndexed,
-                spacesAPI,
-                repositoryExternalUpdate,
-                postCommitNotificationService,
-                branchAccessAuthorizer);
+        helper = new GitRepositoryFactoryHelper(indexed,
+                                                notIndexed,
+                                                spacesAPI,
+                                                repositoryExternalUpdate,
+                                                postCommitNotificationService,
+                                                branchAccessAuthorizer);
 
         if (Mode.INDEXED.equals(mode)) {
             initServices(indexed,

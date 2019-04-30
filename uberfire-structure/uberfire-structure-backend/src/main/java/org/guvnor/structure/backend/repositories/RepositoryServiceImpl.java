@@ -364,9 +364,8 @@ public class RepositoryServiceImpl implements RepositoryService {
                                  final String alias) {
         final Optional<org.guvnor.structure.organizationalunit.config.RepositoryInfo> config = findRepositoryConfig(space.getName(),
                                                                                                                     alias);
-        SpaceConfigStorage configStorage = this.spaceConfigStorage.get(space.getName());
+
         try {
-//            configStorage.startBatch();
             OrganizationalUnit orgUnit = Optional
                     .ofNullable(organizationalUnitService.getOrganizationalUnit(space.getName()))
                     .orElseThrow(() -> new IllegalArgumentException(String
@@ -375,13 +374,12 @@ public class RepositoryServiceImpl implements RepositoryService {
             doRemoveRepository(orgUnit,
                                alias,
                                config,
-                               repo -> repositoryRemovedEvent.fire(new RepositoryRemovedEvent(repo)));
+                               repo -> repositoryRemovedEvent.fire(new RepositoryRemovedEvent(repo)),
+                               true);
         } catch (final Exception e) {
             logger.error("Error during remove repository",
                          e);
             throw new RuntimeException(e);
-        } finally {
-//            configStorage.endBatch();
         }
     }
 
@@ -402,7 +400,8 @@ public class RepositoryServiceImpl implements RepositoryService {
                                    findRepositoryConfig(space.getName(),
                                                         alias),
                                    repo -> {
-                                   });
+                                   },
+                                   false);
             }
         } catch (final Exception e) {
             logger.error("Error while removing repositories",
@@ -416,32 +415,34 @@ public class RepositoryServiceImpl implements RepositoryService {
     private void doRemoveRepository(final OrganizationalUnit orgUnit,
                                     final String alias,
                                     final Optional<org.guvnor.structure.organizationalunit.config.RepositoryInfo> thisRepositoryConfig,
-                                    final Consumer<Repository> notification) throws Exception {
+                                    final Consumer<Repository> notification,
+                                    final boolean lock) {
 
-        // ESTO es parte del physical deletion
-        Repository repo = this.configuredRepositories.getRepositoryByRepositoryAlias(orgUnit.getSpace(),
-                                                                                     alias);
+        SpaceConfigStorage configStorage = this.spaceConfigStorage.get(orgUnit.getName());
 
-        if (repo != null) {
-//            try {
-//                Branch defaultBranch = repo.getDefaultBranch().orElseThrow(() -> new IllegalStateException("Repository should have at least one branch."));
-//                org.uberfire.java.nio.file.Path originalPath = convert(defaultBranch.getPath());
-//                org.uberfire.java.nio.file.Path newPath = originalPath.resolveSibling(this.generateRandomHexaId(alias));
-//                ioService.startBatch(newPath.getFileSystem());
-//                ioService.move(originalPath,
-//                               newPath);
-//            } finally {
-//                ioService.endBatch();
-//            }
-            notification.accept(repo);
-        }
+        try {
+            if (lock) {
+                configStorage.startBatch();
+            }
 
-        //Remove reference to Repository from Organizational Units
-        for (Repository repository : orgUnit.getRepositories()) {
-            if (repository.getAlias().equals(alias)) {
-                organizationalUnitService.removeRepository(orgUnit,
-                                                           repository);
-                metadataStore.delete(alias);
+            Repository repo = this.configuredRepositories.getRepositoryByRepositoryAlias(orgUnit.getSpace(),
+                                                                                         alias);
+
+            if (repo != null) {
+                notification.accept(repo);
+            }
+
+            //Remove reference to Repository from Organizational Units
+            for (Repository repository : orgUnit.getRepositories()) {
+                if (repository.getAlias().equals(alias)) {
+                    organizationalUnitService.removeRepository(orgUnit,
+                                                               repository);
+                    metadataStore.delete(alias);
+                }
+            }
+        } finally {
+            if (lock) {
+                configStorage.endBatch();
             }
         }
     }

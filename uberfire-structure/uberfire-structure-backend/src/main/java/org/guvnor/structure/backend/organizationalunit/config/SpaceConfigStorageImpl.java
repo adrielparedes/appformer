@@ -57,7 +57,8 @@ public class SpaceConfigStorageImpl implements SpaceConfigStorage {
 
     public void setup(final String spaceName) {
         this.spaceName = spaceName;
-        objectStorage.init(getRootURI(spaceName));    }
+        objectStorage.init(getRootURI(spaceName));
+    }
 
     @Override
     public BranchPermissions loadBranchPermissions(final String branchName,
@@ -71,7 +72,6 @@ public class SpaceConfigStorageImpl implements SpaceConfigStorage {
         }
 
         return branchPermissions;
-
     }
 
     private URI getRootURI(String spaceName) {
@@ -129,7 +129,8 @@ public class SpaceConfigStorageImpl implements SpaceConfigStorage {
     @Override
     public void saveSpaceInfo(final SpaceInfo spaceInfo) {
         objectStorage.write(buildSpaceConfigFilePath(SPACE_INFO),
-                            spaceInfo);
+                            spaceInfo,
+                            false);
     }
 
     @Override
