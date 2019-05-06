@@ -17,7 +17,6 @@ package org.guvnor.structure.backend.organizationalunit;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -53,7 +52,6 @@ import org.slf4j.LoggerFactory;
 import org.uberfire.ext.security.management.api.event.UserDeletedEvent;
 import org.uberfire.io.IOService;
 import org.uberfire.java.nio.file.FileSystem;
-import org.uberfire.java.nio.file.Path;
 import org.uberfire.java.nio.fs.jgit.JGitPathImpl;
 import org.uberfire.rpc.SessionInfo;
 import org.uberfire.security.authz.AuthorizationManager;
@@ -148,7 +146,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     @Override
     public OrganizationalUnit getOrganizationalUnit(final String name) {
         SpaceInfo spaceInfo = spaceConfigStorageRegistry.get(name).loadSpaceInfo();
-        if (spaceInfo != null) {
+        if (spaceInfo != null && !spaceInfo.isDeleted()) {
             return organizationalUnitFactory.newOrganizationalUnit(spaceInfo);
         } else {
             return null;
@@ -162,7 +160,8 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(getNiogitPath())) {
             for (java.nio.file.Path spacePath : stream) {
                 final File spaceDirectory = spacePath.toFile();
-                if (spaceDirectory.isDirectory() && !spaceDirectory.getName().equals("system") && this.spaceConfigStorageRegistry.get(spaceDirectory.getName()).isInitialized()) {
+                SpaceConfigStorage configStorage = this.spaceConfigStorageRegistry.get(spaceDirectory.getName());
+                if (spaceDirectory.isDirectory() && !spaceDirectory.getName().equals("system") && configStorage.isInitialized() && !configStorage.loadSpaceInfo().isDeleted()) {
                     spaces.add(getOrganizationalUnit(spaceDirectory.getName()));
                 }
             }
@@ -228,6 +227,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
         try {
             String _defaultGroupId = defaultGroupId == null || defaultGroupId.trim().isEmpty() ? getSanitizedDefaultGroupId(name) : defaultGroupId;
             final SpaceInfo spaceInfo = new SpaceInfo(name,
+                                                      false,
                                                       _defaultGroupId,
                                                       contributors,
                                                       getRepositoryAliases(repositories),
@@ -422,15 +422,20 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     }
 
     private void removeSpaceDirectory(final Space space) {
-        final URI configPathURI = URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT,
-                                                                                   space.getName()));
+//        final URI configPathURI = URI.create(SpacesAPI.resolveConfigFileSystemPath(SpacesAPI.Scheme.DEFAULT,
+//                                                                                   space.getName()));
 
-        final Path configPath = ioService.get(configPathURI);
-        final JGitPathImpl configGitPath = (JGitPathImpl) configPath;
-        final File spacePath = configGitPath.getFileSystem().getGit().getRepository().getDirectory().getParentFile().getParentFile();
-
-        ioService.delete(configPath.getFileSystem().getPath(""));
-        spacePath.delete();
+//        final Path configPath = ioService.get(configPathURI);
+//        final JGitPathImpl configGitPath = (JGitPathImpl) configPath;
+//        final File spacePath = configGitPath.getFileSystem().getGit().getRepository().getDirectory().getParentFile().getParentFile();
+//
+//        configGitPath.getFileSystem().unlock();
+//        ioService.delete(configPath.getFileSystem().getPath(""));
+//        spacePath.delete();
+        SpaceConfigStorage configStorage = this.spaceConfigStorageRegistry.get(space.getName());
+        SpaceInfo spaceInfo = configStorage.loadSpaceInfo();
+        spaceInfo.setDeleted(true);
+        configStorage.saveSpaceInfo(spaceInfo);
         this.spaceConfigStorageRegistry.remove(space.getName());
     }
 
@@ -496,6 +501,9 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     }
 
     boolean spaceDirectoryExists(String spaceName) {
-        return getNiogitPath().resolve(spaceName).toFile().exists() && this.spaceConfigStorageRegistry.get(spaceName).isInitialized();
+        SpaceConfigStorage configStorage = this.spaceConfigStorageRegistry.get(spaceName);
+        return getNiogitPath().resolve(spaceName).toFile().exists() &&
+                configStorage.isInitialized() &&
+                configStorage.loadSpaceInfo().isDeleted();
     }
 }

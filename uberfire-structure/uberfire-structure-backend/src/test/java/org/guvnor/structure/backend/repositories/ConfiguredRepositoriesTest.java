@@ -81,6 +81,7 @@ public class ConfiguredRepositoriesTest {
                                              "release"));
 
         SpaceInfo space1 = new SpaceInfo(SPACE1.getName(),
+                                         false,
                                          "com.space1",
                                          createAdminContributor("admin1"),
                                          repositoriesSpace1,
@@ -105,6 +106,7 @@ public class ConfiguredRepositoriesTest {
                                              "release"));
 
         SpaceInfo space2 = new SpaceInfo(SPACE2.getName(),
+                                         false,
                                          "com.space2",
                                          createAdminContributor("admin2"),
                                          repositoriesSpace2,

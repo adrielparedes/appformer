@@ -126,6 +126,7 @@ public class OrganizationalUnitServiceTest {
         doAnswer(invocationOnMock -> {
             final SpaceConfigStorage spaceConfigStorage = mock(SpaceConfigStorage.class);
             doReturn(new SpaceInfo((String) invocationOnMock.getArguments()[0],
+                                   false,
                                    "defaultGroupId",
                                    Collections.emptyList(),
                                    Collections.emptyList(),
@@ -195,6 +196,10 @@ public class OrganizationalUnitServiceTest {
     @Test
     public void createOrganizationalUnitWithDuplicatedNameTest() {
         setOUCreationPermission(true);
+
+        doReturn(true)
+                .when(organizationalUnitService)
+                .spaceDirectoryExists(anyString());
 
         final OrganizationalUnit ou = organizationalUnitService.createOrganizationalUnit("space1",
                                                                                          "default.group.id");
@@ -271,8 +276,7 @@ public class OrganizationalUnitServiceTest {
         RemoveOrganizationalUnitEvent event = eventCaptor.getValue();
         assertEquals(repos,
                      event.getOrganizationalUnit().getRepositories());
-        verify(ioService).delete(fsPath);
-        verify(directory).delete();
+        verify(spaceConfigStorageRegistry).remove("A");
         assertEquals(repos,
                      event.getOrganizationalUnit().getRepositories());
     }

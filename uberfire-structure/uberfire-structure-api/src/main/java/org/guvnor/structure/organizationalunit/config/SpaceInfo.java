@@ -30,6 +30,8 @@ public class SpaceInfo {
 
     private String name;
 
+    private boolean deleted;
+
     private String defaultGroupId;
 
     private Collection<Contributor> contributors;
@@ -39,11 +41,13 @@ public class SpaceInfo {
     private List<String> securityGroups;
 
     public SpaceInfo(@MapsTo("name") final String name,
+                     @MapsTo("deleted") final boolean deleted,
                      @MapsTo("defaultGroupId") final String defaultGroupId,
                      @MapsTo("contributors") final Collection<Contributor> contributors,
                      @MapsTo("repositories") final List<RepositoryInfo> repositories,
                      @MapsTo("securityGroups") final List<String> securityGroups) {
         this.name = name;
+        this.deleted = deleted;
         this.defaultGroupId = defaultGroupId;
         this.contributors = contributors;
         this.repositories = repositories;
@@ -96,5 +100,13 @@ public class SpaceInfo {
 
     public void removeRepository(String name) {
         this.getRepositories().removeIf(repo -> repo.getName().equals(name));
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }
