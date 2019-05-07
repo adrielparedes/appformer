@@ -16,8 +16,8 @@
 
 package org.guvnor.structure.backend.organizationalunit.config;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -30,7 +30,7 @@ public class SpaceConfigStorageRegistryImpl implements SpaceConfigStorageRegistr
 
     private Instance<SpaceConfigStorage> spaceConfigStorages;
 
-    private Map<String, SpaceConfigStorage> storageBySpaceName = new HashMap<>();
+    private Map<String, SpaceConfigStorage> storageBySpaceName = new ConcurrentHashMap<>();
 
     public SpaceConfigStorageRegistryImpl() {
     }
