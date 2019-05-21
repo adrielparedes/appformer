@@ -14,14 +14,6 @@
 */
 package org.guvnor.common.services.project.backend.server;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
 import org.guvnor.common.services.project.backend.server.utils.PathUtil;
 import org.guvnor.common.services.project.events.NewProjectEvent;
 import org.guvnor.common.services.project.model.Module;
@@ -30,6 +22,8 @@ import org.guvnor.common.services.project.service.ModuleService;
 import org.guvnor.common.services.project.service.WorkspaceProjectService;
 import org.guvnor.structure.organizationalunit.OrganizationalUnit;
 import org.guvnor.structure.organizationalunit.OrganizationalUnitService;
+import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
+import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageRegistry;
 import org.guvnor.structure.repositories.Branch;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryEnvironmentConfigurations;
@@ -52,20 +46,12 @@ import org.uberfire.mocks.EventSourceMock;
 import org.uberfire.spaces.Space;
 import org.uberfire.spaces.SpacesAPI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import java.net.URI;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WorkspaceProjectMigrationServiceImplTest {
@@ -114,6 +100,12 @@ public class WorkspaceProjectMigrationServiceImplTest {
     @Mock
     private Space space;
 
+    @Mock
+    private SpaceConfigStorage spaceConfigStorage;
+
+    @Mock
+    private SpaceConfigStorageRegistry spaceConfigStorageRegistry;
+
     @Captor
     private ArgumentCaptor<Path> pathArgumentCaptor;
 
@@ -128,6 +120,8 @@ public class WorkspaceProjectMigrationServiceImplTest {
 
     @Before
     public void setUp() throws Exception {
+
+        when(spaceConfigStorageRegistry.get(anyString())).thenReturn(spaceConfigStorage);
 
         doReturn(mock(WorkspaceProject.class)).when(workspaceProjectService).resolveProject(any(Repository.class));
 
@@ -151,11 +145,12 @@ public class WorkspaceProjectMigrationServiceImplTest {
         when(pathUtil.getNiogitRepoPath(any())).thenReturn(NIOGIT_PATH);
 
         service = spy(new WorkspaceProjectMigrationServiceImpl(workspaceProjectService,
-                                                           repositoryService,
-                                                           organizationalUnitService,
-                                                           pathUtil,
-                                                           newProjectEvent,
-                                                           moduleService));
+                repositoryService,
+                organizationalUnitService,
+                pathUtil,
+                newProjectEvent,
+                moduleService,
+                spaceConfigStorageRegistry));
 
         doAnswer(invocation -> null).when(service).cleanupOrigin(any(Repository.class));
 
