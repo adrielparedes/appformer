@@ -502,13 +502,17 @@ public class RepositoryServiceImpl implements RepositoryService {
         });
     }
 
-    protected void saveRepositoryConfig(String space,
-                                        org.guvnor.structure.organizationalunit.config.RepositoryInfo config) {
-        SpaceConfigStorage conf = this.spaceConfigStorage.get(space);
-        SpaceInfo spaceInfo = conf.loadSpaceInfo();
-        spaceInfo.removeRepository(config.getName());
-        spaceInfo.getRepositories().add(config);
-        conf.saveSpaceInfo(spaceInfo);
+    protected void saveRepositoryConfig(final String space,
+                                        final org.guvnor.structure.organizationalunit.config.RepositoryInfo config) {
+
+        spaceConfigStorage.getBatch(space)
+                .run(context -> {
+                    SpaceInfo spaceInfo = context.getSpaceInfo();
+                    spaceInfo.removeRepository(config.getName());
+                    spaceInfo.getRepositories().add(config);
+                    context.saveSpaceInfo();
+                    return null;
+                });
     }
 
     @Override
