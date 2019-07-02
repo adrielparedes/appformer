@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import javax.enterprise.event.Event;
 
 import org.guvnor.common.services.project.events.RepositoryContributorsUpdatedEvent;
+import org.guvnor.structure.backend.organizationalunit.config.SpaceConfigStorageRegistryImpl;
 import org.guvnor.structure.contributors.Contributor;
 import org.guvnor.structure.contributors.ContributorType;
 import org.guvnor.structure.organizationalunit.OrganizationalUnit;
@@ -16,6 +17,7 @@ import org.guvnor.structure.organizationalunit.OrganizationalUnitService;
 import org.guvnor.structure.organizationalunit.config.RepositoryConfiguration;
 import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
+import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageBatch;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageRegistry;
 import org.guvnor.structure.organizationalunit.config.SpaceInfo;
 import org.guvnor.structure.repositories.Branch;
@@ -128,19 +130,19 @@ public class RepositoryServiceImplTest {
         doReturn(repository).when(configuredRepositories).getRepositoryByRepositoryAlias(any(),
                                                                                          any());
 
-        doAnswer(invocationOnMock -> {
-            final SpaceConfigStorage spaceConfigStorage = mock(SpaceConfigStorage.class);
-            doReturn(new SpaceInfo((String) invocationOnMock.getArguments()[0],
-                                   "defaultGroupId",
-                                   Collections.emptyList(),
-                                   new ArrayList<>(Arrays.asList(new RepositoryInfo("alias",
-                                                                                    false,
-                                                                                    new RepositoryConfiguration()))),
-                                   Collections.emptyList())).when(spaceConfigStorage).loadSpaceInfo();
-            doReturn(true)
-                    .when(spaceConfigStorage).isInitialized();
-            return spaceConfigStorage;
-        }).when(registry).get(any());
+        final SpaceConfigStorage spaceConfigStorage = mock(SpaceConfigStorage.class);
+        doReturn(new SpaceInfo("space",
+                               "defaultGroupId",
+                               Collections.emptyList(),
+                               new ArrayList<>(Arrays.asList(new RepositoryInfo("alias",
+                                                                                false,
+                                                                                new RepositoryConfiguration()))),
+                               Collections.emptyList())).when(spaceConfigStorage).loadSpaceInfo();
+        doReturn(true)
+                .when(spaceConfigStorage).isInitialized();
+
+        when(registry.get(anyString())).thenReturn(spaceConfigStorage);
+        when(registry.getBatch(anyString())).thenReturn(new SpaceConfigStorageRegistryImpl.SpaceStorageBatchImpl(spaceConfigStorage));
 
         String username = "admin1";
         repositoryService.updateContributors(repository,
@@ -159,6 +161,10 @@ public class RepositoryServiceImplTest {
                      configCaptor.getValue().getContributors().get(0).getUsername());
         assertEquals(ContributorType.OWNER,
                      configCaptor.getValue().getContributors().get(0).getType());
+
+        verify(spaceConfigStorage).startBatch();
+        verify(spaceConfigStorage).saveSpaceInfo(any());
+        verify(spaceConfigStorage).endBatch();
     }
 
     @Test
