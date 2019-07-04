@@ -78,6 +78,7 @@ public class ClusterEventObserver {
                         ClusterSerializedCDIMessageWrapper message) {
         if (!message.getNodeId().equals(nodeId)) {
             try {
+                LOGGER.info("[CLUSTER EVENT RECEIVED] Listening event " + message.getFqcn() + " - From Node ID: " + message.getNodeId() + " - To Node ID: " + nodeId + " - Event content: " + message.getJson());
                 Object event = fromJSON(message);
                 eventBus.fire(event);
             } catch (Exception e) {
@@ -103,10 +104,12 @@ public class ClusterEventObserver {
             return;
         }
 
+        final String eventJson = toJSON(event);
         ClusterSerializedCDIMessageWrapper wrapper = new ClusterSerializedCDIMessageWrapper(nodeId,
-                                                                                            toJSON(event),
+                                                                                            eventJson,
                                                                                             event.getClass().getName());
 
+        LOGGER.info("[CLUSTER EVENT SENT] Broadcasting event " + event.getClass().getName() + " - From Node ID: " + nodeId + " - Event content: " + eventJson);
         getClusterService().broadcast(ClusterService.DestinationType.PubSub,
                                       CHANNEL_NAME,
                                       wrapper);
