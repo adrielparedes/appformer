@@ -311,24 +311,33 @@ public class InfinispanContext implements Disposable {
     }
 
     public void loadProtobufSchema(RemoteCache<String, String> metadataCache) {
-        metadataCache.entrySet()
-                .stream()
-                .filter(entry -> !entry.getKey().equals(addCachePrefix(SCHEMA_PROTO)))
-                .forEach((entry) -> {
-                    int index = entry.getKey().lastIndexOf('.');
-                    String protoTypeName = entry.getKey().substring(0,
-                                                                    index);
-                    String proto = entry.getValue();
+        int retries = 5;
+        boolean finished = false;
+        while (retries > 0 && !finished) {
+            try {
+                metadataCache.entrySet()
+                        .stream()
+                        .filter(entry -> !entry.getKey().equals(addCachePrefix(SCHEMA_PROTO)))
+                        .forEach((entry) -> {
+                            int index = entry.getKey().lastIndexOf('.');
+                            String protoTypeName = entry.getKey().substring(0,
+                                                                            index);
+                            String proto = entry.getValue();
 
-                    try {
-                        marshaller.registerSchema(protoTypeName,
-                                                  proto,
-                                                  KObject.class);
-                    } catch (IOException e) {
-                        throw new InfinispanException("Can't add protobuf schema <" + protoTypeName + "> to cache",
-                                                      e);
-                    }
-                });
+                            try {
+                                marshaller.registerSchema(protoTypeName,
+                                                          proto,
+                                                          KObject.class);
+                            } catch (IOException e) {
+                                throw new InfinispanException("Can't add protobuf schema <" + protoTypeName + "> to cache",
+                                                              e);
+                            }
+                        });
+                finished = true;
+            } catch (Exception e) {
+                retries--;
+            }
+        }
     }
 
     @Override
