@@ -335,6 +335,7 @@ public class InfinispanContext implements Disposable {
                         });
                 finished = true;
             } catch (Exception e) {
+                logger.error("Error found. Retrying", e);
                 retries--;
             }
         }
