@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -58,6 +59,8 @@ import org.jboss.errai.bus.server.annotations.Service;
 import org.uberfire.ext.security.management.api.event.UserDeletedEvent;
 import org.uberfire.io.IOService;
 import org.uberfire.java.nio.file.FileSystem;
+import org.uberfire.java.nio.fs.jgit.FileSystemLock;
+import org.uberfire.java.nio.fs.jgit.FileSystemLockManager;
 import org.uberfire.java.nio.fs.jgit.JGitPathImpl;
 import org.uberfire.rpc.SessionInfo;
 import org.uberfire.security.authz.AuthorizationManager;
@@ -70,6 +73,9 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
     public static final String DEFAULT_GROUP_ID = "defaultGroupId";
     public static final String DELETED = "deleted";
+    private static final TimeUnit LOCK_LAST_ACCESS_TIME_UNIT = TimeUnit.SECONDS;
+    private static final long LOCK_LAST_ACCESS_THRESHOLD = 10;
+
     private OrganizationalUnitFactory organizationalUnitFactory;
 
     private Event<NewOrganizationalUnitEvent> newOrganizationalUnitEvent;
@@ -291,29 +297,38 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
                                                        final String defaultGroupId,
                                                        final Collection<Repository> repositories,
                                                        final Collection<Contributor> contributors) {
-        if (spaceDirectoryExists(name)) {
-            return null;
-        }
-
-        OrganizationalUnit newOrganizationalUnit = null;
-
-        try {
-            String _defaultGroupId = defaultGroupId == null || defaultGroupId.trim().isEmpty() ? getSanitizedDefaultGroupId(name) : defaultGroupId;
-            final SpaceInfo spaceInfo = new SpaceInfo(name,
-                                                      _defaultGroupId,
-                                                      contributors,
-                                                      getRepositoryAliases(repositories),
-                                                      Collections.emptyList());
-            spaceConfigStorageRegistry.get(name).saveSpaceInfo(spaceInfo);
-            newOrganizationalUnit = organizationalUnitFactory.newOrganizationalUnit(spaceInfo);
-
-            return newOrganizationalUnit;
-        } finally {
-            if (newOrganizationalUnit != null) {
-                newOrganizationalUnitEvent.fire(new NewOrganizationalUnitEvent(newOrganizationalUnit,
-                                                                               getUserInfo(sessionInfo)));
+        return getNiogitLock().run(() -> {
+            if (spaceDirectoryExists(name)) {
+                return null;
             }
-        }
+
+            OrganizationalUnit newOrganizationalUnit = null;
+
+            try {
+                String _defaultGroupId = defaultGroupId == null || defaultGroupId.trim().isEmpty() ? getSanitizedDefaultGroupId(name) : defaultGroupId;
+                final SpaceInfo spaceInfo = new SpaceInfo(name,
+                                                          _defaultGroupId,
+                                                          contributors,
+                                                          getRepositoryAliases(repositories),
+                                                          Collections.emptyList());
+                spaceConfigStorageRegistry.get(name).saveSpaceInfo(spaceInfo);
+                newOrganizationalUnit = organizationalUnitFactory.newOrganizationalUnit(spaceInfo);
+
+                return newOrganizationalUnit;
+            } finally {
+                if (newOrganizationalUnit != null) {
+                    newOrganizationalUnitEvent.fire(new NewOrganizationalUnitEvent(newOrganizationalUnit,
+                                                                                   getUserInfo(sessionInfo)));
+                }
+            }
+        });
+    }
+
+    private FileSystemLock getNiogitLock() {
+        return FileSystemLockManager.getInstance().getFileSystemLock(getNiogitPath().toFile(),
+                                                                     "niogit.lock",
+                                                                     LOCK_LAST_ACCESS_TIME_UNIT,
+                                                                     LOCK_LAST_ACCESS_THRESHOLD);
     }
 
     private List<RepositoryInfo> getRepositoryAliases(final Collection<Repository> repositories) {
@@ -481,15 +496,19 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
     @Override
     public void removeOrganizationalUnit(String groupName) {
-        final OrganizationalUnit organizationalUnit = getOrganizationalUnit(groupName);
+        getNiogitLock().run(() -> {
+            final OrganizationalUnit organizationalUnit = getOrganizationalUnit(groupName);
 
-        if (organizationalUnit != null) {
-            repositoryService.removeRepositories(organizationalUnit.getSpace(),
-                                                 organizationalUnit.getRepositories().stream().map(repo -> repo.getAlias()).collect(Collectors.toSet()));
-            removeSpaceDirectory(organizationalUnit);
-            removeOrganizationalUnitEvent.fire(new RemoveOrganizationalUnitEvent(organizationalUnit,
-                                                                                 getUserInfo(sessionInfo)));
-        }
+            if (organizationalUnit != null) {
+                repositoryService.removeRepositories(organizationalUnit.getSpace(),
+                                                     organizationalUnit.getRepositories().stream().map(repo -> repo.getAlias()).collect(Collectors.toSet()));
+                removeSpaceDirectory(organizationalUnit);
+                removeOrganizationalUnitEvent.fire(new RemoveOrganizationalUnitEvent(organizationalUnit,
+                                                                                     getUserInfo(sessionInfo)));
+            }
+
+            return null;
+        });
     }
 
     private void removeSpaceDirectory(final OrganizationalUnit organizationalUnit) {

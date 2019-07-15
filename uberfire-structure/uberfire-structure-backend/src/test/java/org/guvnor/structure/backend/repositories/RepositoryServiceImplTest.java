@@ -182,7 +182,7 @@ public class RepositoryServiceImplTest {
 
         InOrder inOrder = inOrder(this.organizationalUnitService, notification);
 
-        this.repositoryService.doRemoveRepository(orgUnit, alias, repositoryConfig, notification, false);
+        this.repositoryService.doRemoveRepository(orgUnit, alias, repositoryConfig, notification);
 
         inOrder.verify(this.organizationalUnitService).removeRepository(any(), any());
         inOrder.verify(notification).accept(repository);

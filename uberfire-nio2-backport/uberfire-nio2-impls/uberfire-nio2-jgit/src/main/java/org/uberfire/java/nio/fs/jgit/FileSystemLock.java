@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,15 @@ public class FileSystemLock {
                 physicalUnLockOnFS();
             }
             lock.unlock();
+        }
+    }
+
+    public <T> T run(final Supplier<T> lockedCommand) {
+        try {
+            this.lock();
+            return lockedCommand.get();
+        } finally {
+            this.unlock();
         }
     }
 
