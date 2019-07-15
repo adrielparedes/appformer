@@ -42,6 +42,7 @@ import org.guvnor.structure.organizationalunit.UpdatedOrganizationalUnitEvent;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageRegistry;
 import org.guvnor.structure.organizationalunit.config.SpaceInfo;
+import org.guvnor.structure.organizationalunit.exception.OrganizationalUnitAlreadyExistsException;
 import org.guvnor.structure.organizationalunit.impl.OrganizationalUnitImpl;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryService;
@@ -232,7 +233,7 @@ public class OrganizationalUnitServiceTest {
                      orgUnits.size());
     }
 
-    @Test
+    @Test(expected = OrganizationalUnitAlreadyExistsException.class)
     public void createOrganizationalUnitWithDuplicatedNameTest() {
         setOUCreationPermission(true);
 
@@ -242,8 +243,6 @@ public class OrganizationalUnitServiceTest {
 
         final OrganizationalUnit ou = organizationalUnitService.createOrganizationalUnit(SPACE_NAME,
                                                                                          DEFAULT_GROUP_ID);
-
-        assertNull(ou);
 
         verify(organizationalUnitFactory,
                never()).newOrganizationalUnit(any());

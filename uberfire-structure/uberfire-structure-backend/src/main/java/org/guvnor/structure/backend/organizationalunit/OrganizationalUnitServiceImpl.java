@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
@@ -47,6 +46,7 @@ import org.guvnor.structure.organizationalunit.config.RepositoryInfo;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorage;
 import org.guvnor.structure.organizationalunit.config.SpaceConfigStorageRegistry;
 import org.guvnor.structure.organizationalunit.config.SpaceInfo;
+import org.guvnor.structure.organizationalunit.exception.OrganizationalUnitAlreadyExistsException;
 import org.guvnor.structure.organizationalunit.impl.OrganizationalUnitImpl;
 import org.guvnor.structure.repositories.Repository;
 import org.guvnor.structure.repositories.RepositoryService;
@@ -274,7 +274,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
 
     @Override
     public OrganizationalUnit createOrganizationalUnit(final String name,
-                                                       final String defaultGroupId) {
+                                                       final String defaultGroupId) throws OrganizationalUnitAlreadyExistsException {
 
         return createOrganizationalUnit(name,
                                         defaultGroupId,
@@ -284,7 +284,7 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     @Override
     public OrganizationalUnit createOrganizationalUnit(final String name,
                                                        final String defaultGroupId,
-                                                       final Collection<Repository> repositories) {
+                                                       final Collection<Repository> repositories) throws OrganizationalUnitAlreadyExistsException {
 
         return createOrganizationalUnit(name,
                                         defaultGroupId,
@@ -296,10 +296,10 @@ public class OrganizationalUnitServiceImpl implements OrganizationalUnitService 
     public OrganizationalUnit createOrganizationalUnit(final String name,
                                                        final String defaultGroupId,
                                                        final Collection<Repository> repositories,
-                                                       final Collection<Contributor> contributors) {
+                                                       final Collection<Contributor> contributors) throws OrganizationalUnitAlreadyExistsException {
         return getNiogitLock().run(() -> {
             if (spaceDirectoryExists(name)) {
-                return null;
+                throw new OrganizationalUnitAlreadyExistsException();
             }
 
             OrganizationalUnit newOrganizationalUnit = null;

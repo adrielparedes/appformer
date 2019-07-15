@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.guvnor.structure.contributors.Contributor;
+import org.guvnor.structure.organizationalunit.exception.OrganizationalUnitAlreadyExistsException;
 import org.guvnor.structure.repositories.Repository;
 import org.jboss.errai.bus.server.annotations.Remote;
 import org.uberfire.spaces.Space;
@@ -53,16 +54,16 @@ public interface OrganizationalUnitService {
     Collection<OrganizationalUnit> getOrganizationalUnits(final boolean includeDeleted);
 
     OrganizationalUnit createOrganizationalUnit(final String name,
-                                                final String defaultGroupId);
+                                                final String defaultGroupId) throws OrganizationalUnitAlreadyExistsException;
 
     OrganizationalUnit createOrganizationalUnit(final String name,
                                                 final String defaultGroupId,
-                                                final Collection<Repository> repositories);
+                                                final Collection<Repository> repositories) throws OrganizationalUnitAlreadyExistsException;
 
     OrganizationalUnit createOrganizationalUnit(final String name,
                                                 final String defaultGroupId,
                                                 final Collection<Repository> repositories,
-                                                final Collection<Contributor> contributors);
+                                                final Collection<Contributor> contributors) throws OrganizationalUnitAlreadyExistsException;
 
     OrganizationalUnit updateOrganizationalUnit(final String name,
                                                 final String defaultGroupId);

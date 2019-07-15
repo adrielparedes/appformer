@@ -46,6 +46,7 @@ import org.guvnor.structure.contributors.Contributor;
 import org.guvnor.structure.contributors.ContributorType;
 import org.guvnor.structure.organizationalunit.OrganizationalUnit;
 import org.guvnor.structure.organizationalunit.OrganizationalUnitService;
+import org.guvnor.structure.organizationalunit.exception.OrganizationalUnitAlreadyExistsException;
 import org.guvnor.structure.organizationalunit.impl.OrganizationalUnitImpl;
 import org.guvnor.structure.repositories.RepositoryEnvironmentConfigurations;
 import org.guvnor.structure.repositories.RepositoryService;
@@ -484,17 +485,25 @@ public class JobRequestHelper {
             return result;
         }
 
-        organizationalUnit = organizationalUnitService.createOrganizationalUnit(spaceName,
-                                                                                _defaultGroupId,
-                                                                                Collections.emptyList(),
-                                                                                Collections.singletonList(new Contributor(spaceOwner, ContributorType.OWNER)));
+        try {
+            organizationalUnit = organizationalUnitService.createOrganizationalUnit(spaceName,
+                                                                                    _defaultGroupId,
+                                                                                    Collections.emptyList(),
+                                                                                    Collections.singletonList(new Contributor(spaceOwner,
+                                                                                                                              ContributorType.OWNER)));
 
-        if (organizationalUnit != null) {
-            result.setResult("Space " + organizationalUnit.getName() + " is created successfully.");
-            result.setStatus(JobStatus.SUCCESS);
-        } else {
-            result.setStatus(JobStatus.FAIL);
+            if (organizationalUnit != null) {
+                result.setResult("Space " + organizationalUnit.getName() + " is created successfully.");
+                result.setStatus(JobStatus.SUCCESS);
+            } else {
+                result.setStatus(JobStatus.FAIL);
+            }
+        } catch (OrganizationalUnitAlreadyExistsException e) {
+            result.setStatus(JobStatus.BAD_REQUEST);
+            result.setResult("Space with name " + spaceName + " already exists");
+            return result;
         }
+
         return result;
     }
 
