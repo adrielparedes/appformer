@@ -28,6 +28,8 @@ import org.guvnor.structure.repositories.RepositoryCopier;
 import org.guvnor.structure.repositories.RepositoryEnvironmentConfigurations;
 import org.guvnor.structure.repositories.RepositoryService;
 import org.guvnor.structure.repositories.impl.git.GitRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.uberfire.backend.server.util.Paths;
 import org.uberfire.backend.vfs.Path;
 import org.uberfire.io.IOService;
@@ -43,6 +45,8 @@ import org.uberfire.spaces.Space;
 
 public class RepositoryCopierImpl
         implements RepositoryCopier {
+
+    private static final Logger logger = LoggerFactory.getLogger(RepositoryCopierImpl.class);
 
     private IOService ioService;
     private Event<NewBranchEvent> newBranchEventEvent;
@@ -70,6 +74,7 @@ public class RepositoryCopierImpl
     public Repository copy(final OrganizationalUnit targetOU,
                            final String newRepositoryName,
                            final Path originRoot) {
+        logger.info("[IMPORT_DEBUG] RepositoryCopierImpl#copy1: begin");
 
         final Repository targetRepository = getRepository(targetOU,
                                                           newRepositoryName);
@@ -79,20 +84,25 @@ public class RepositoryCopierImpl
                  targetRepository.getDefaultBranch().get().getPath());
         }
 
+        logger.info("[IMPORT_DEBUG] RepositoryCopierImpl#copy1: end");
         return targetRepository;
     }
 
     private Repository getRepository(final OrganizationalUnit targetOU,
                                      final String newRepositoryName) {
-        return repositoryService.createRepository(targetOU,
-                                                  GitRepository.SCHEME.toString(),
-                                                  makeSafeRepositoryName(newRepositoryName),
-                                                  new RepositoryEnvironmentConfigurations());
+        logger.info("[IMPORT_DEBUG] RepositoryCopierImpl#getRepository: begin");
+        final Repository repository = repositoryService.createRepository(targetOU,
+                                                                         GitRepository.SCHEME.toString(),
+                                                                         makeSafeRepositoryName(newRepositoryName),
+                                                                         new RepositoryEnvironmentConfigurations());
+        logger.info("[IMPORT_DEBUG] RepositoryCopierImpl#getRepository: end");
+        return repository;
     }
 
     @Override
     public void copy(final Path originRoot,
                      final Path targetRoot) {
+        logger.info("[IMPORT_DEBUG] RepositoryCopierImpl#copy2: begin");
 
         final boolean branchExisted = (repositoryService.getRepository(targetRoot) != null);
 
@@ -114,6 +124,7 @@ public class RepositoryCopierImpl
                                nioTargetRepositoryRoot,
                                originRepositoryRoot);
         }
+        logger.info("[IMPORT_DEBUG] RepositoryCopierImpl#copy2: end");
     }
 
     @Override

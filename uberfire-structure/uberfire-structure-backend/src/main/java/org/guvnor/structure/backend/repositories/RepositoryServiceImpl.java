@@ -15,6 +15,8 @@
 
 package org.guvnor.structure.backend.repositories;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -305,12 +307,15 @@ public class RepositoryServiceImpl implements RepositoryService {
                                        final String scheme,
                                        final String alias,
                                        final RepositoryEnvironmentConfigurations repositoryEnvironmentConfigurations) throws RepositoryAlreadyExistsException {
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository1: begin");
 
-        return createRepository(organizationalUnit,
-                                scheme,
-                                alias,
-                                repositoryEnvironmentConfigurations,
-                                organizationalUnit.getContributors());
+        final Repository repository = createRepository(organizationalUnit,
+                                                       scheme,
+                                                       alias,
+                                                       repositoryEnvironmentConfigurations,
+                                                       organizationalUnit.getContributors());
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository1: end");
+        return repository;
     }
 
     @Override
@@ -319,6 +324,12 @@ public class RepositoryServiceImpl implements RepositoryService {
                                        final String alias,
                                        final RepositoryEnvironmentConfigurations repositoryEnvironmentConfigurations,
                                        final Collection<Contributor> contributors) throws RepositoryAlreadyExistsException {
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository2: begin");
+
+        StringWriter sw = new StringWriter();
+        new Exception().printStackTrace(new PrintWriter(sw));
+        String exceptionAsString = sw.toString();
+        logger.info("[IMPORT_DEBUG] Stack trace (NO EXCEPTION HERE): " + exceptionAsString);
 
         try {
             repositoryEnvironmentConfigurations.setSpace(organizationalUnit.getName());
@@ -326,6 +337,7 @@ public class RepositoryServiceImpl implements RepositoryService {
             Space space = spacesAPI.getSpace(organizationalUnit.getName());
             String newAlias = createFreshRepositoryAlias(alias,
                                                          space);
+            logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository2: creating with alias " + newAlias);
 
             final Repository repository = createRepository(scheme,
                                                            newAlias,
@@ -339,6 +351,7 @@ public class RepositoryServiceImpl implements RepositoryService {
             metadataStore.write(newAlias,
                                 (String) repositoryEnvironmentConfigurations.getOrigin(),
                                 false);
+            logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository2: end");
             return repository;
         } catch (final Exception e) {
             logger.error("Error during create repository",
@@ -349,14 +362,18 @@ public class RepositoryServiceImpl implements RepositoryService {
 
     protected String createFreshRepositoryAlias(final String alias,
                                                 final Space space) {
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createFreshRepositoryAlias: begin");
         int index = 0;
         String suffix = "";
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createFreshRepositoryAlias: trying alias " + alias + suffix);
         while (configuredRepositories.getRepositoryByRepositoryAlias(space,
                                                                      alias + suffix,
                                                                      true) != null) {
             suffix = "-" + ++index;
+            logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createFreshRepositoryAlias: trying alias " + alias + suffix);
         }
 
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createFreshRepositoryAlias: end");
         return alias + suffix;
     }
 
@@ -554,8 +571,10 @@ public class RepositoryServiceImpl implements RepositoryService {
                                         final Space space,
                                         final RepositoryEnvironmentConfigurations repositoryEnvironmentConfigurations,
                                         final Collection<Contributor> contributors) {
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository3: begin");
         return this.spaceConfigStorage.getBatch(space.getName())
                 .run(context -> {
+                    logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository3: inside lock");
                     if (configuredRepositories.containsAlias(space,
                                                              alias)) {
                         throw new RepositoryAlreadyExistsException(alias);
@@ -580,6 +599,7 @@ public class RepositoryServiceImpl implements RepositoryService {
                                                                                                                                                                          false,
                                                                                                                                                                          configuration);
                         repo = createRepository(repositoryInfo);
+                        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository3: end");
                         return repo;
                     } catch (final Exception e) {
                         logger.error("Error during create repository", e);
@@ -594,7 +614,9 @@ public class RepositoryServiceImpl implements RepositoryService {
 
     private Repository createRepository(org.guvnor.structure.organizationalunit.config.RepositoryInfo
                                                 repositoryConfiguration) {
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository4: begin");
         final Repository repository = repositoryFactory.newRepository(repositoryConfiguration);
+        logger.info("[IMPORT_DEBUG] RepositoryServiceImpl#createRepository4: end");
         return repository;
     }
 
