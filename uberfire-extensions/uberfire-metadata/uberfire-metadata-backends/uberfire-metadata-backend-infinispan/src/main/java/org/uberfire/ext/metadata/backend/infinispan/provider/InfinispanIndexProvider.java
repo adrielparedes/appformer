@@ -67,8 +67,8 @@ public class InfinispanIndexProvider implements IndexProvider {
 
         this.schemaStore.updateSchema(kObject);
 
-        this.infinispanContext.getCache(kObject.getClusterId()).put(kObject.getId(),
-                                                                    kObject);
+        this.infinispanContext.getCache(kObject.getClusterId()).putAsync(kObject.getId(),
+                                                                         kObject);
     }
 
     @Override
