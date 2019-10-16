@@ -18,6 +18,7 @@ package org.guvnor.common.services.builder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
@@ -71,6 +72,7 @@ public class ResourceChangeObserver {
         processResourceChange(resourceAddedEvent.getSessionInfo(),
                               resourceAddedEvent.getPath(),
                               ResourceChangeType.ADD);
+        logger.info(resourceAddedEvent.getSessionInfo() + " - " + resourceAddedEvent.getPath() + " - " + ResourceChangeType.ADD);
         incrementalBuilder.addResource(resourceAddedEvent.getPath());
     }
 
@@ -78,6 +80,8 @@ public class ResourceChangeObserver {
         processResourceChange(resourceDeletedEvent.getSessionInfo(),
                               resourceDeletedEvent.getPath(),
                               ResourceChangeType.DELETE);
+
+        logger.info(resourceDeletedEvent.getSessionInfo() + " - " + resourceDeletedEvent.getPath() + " - " + ResourceChangeType.DELETE);
         incrementalBuilder.deleteResource(resourceDeletedEvent.getPath());
     }
 
@@ -85,6 +89,8 @@ public class ResourceChangeObserver {
         processResourceChange(resourceUpdatedEvent.getSessionInfo(),
                               resourceUpdatedEvent.getPath(),
                               ResourceChangeType.UPDATE);
+
+        logger.info(resourceUpdatedEvent.getSessionInfo() + " - " + resourceUpdatedEvent.getPath() + " - " + ResourceChangeType.UPDATE);
         incrementalBuilder.updateResource(resourceUpdatedEvent.getPath());
     }
 
@@ -92,6 +98,8 @@ public class ResourceChangeObserver {
         processResourceChange(resourceCopiedEvent.getSessionInfo(),
                               resourceCopiedEvent.getPath(),
                               ResourceChangeType.COPY);
+
+        logger.info(resourceCopiedEvent.getSessionInfo() + " - " + resourceCopiedEvent.getPath() + " - " + ResourceChangeType.COPY);
         incrementalBuilder.addResource(resourceCopiedEvent.getPath()); //¿?
     }
 
@@ -99,11 +107,14 @@ public class ResourceChangeObserver {
         processResourceChange(resourceRenamedEvent.getSessionInfo(),
                               resourceRenamedEvent.getPath(),
                               ResourceChangeType.RENAME);
+
+        logger.info(resourceRenamedEvent.getSessionInfo() + " - " + resourceRenamedEvent.getPath() + " - " + ResourceChangeType.RENAME);
         incrementalBuilder.deleteResource(resourceRenamedEvent.getPath());
         incrementalBuilder.addResource(resourceRenamedEvent.getDestinationPath());
     }
 
     public void processBatchChanges(@Observes final ResourceBatchChangesEvent resourceBatchChangesEvent) {
+
         final Map<Path, Collection<ResourceChange>> batchChanges = resourceBatchChangesEvent.getBatch();
         if (batchChanges == null) {
             //un expected case
@@ -124,11 +135,11 @@ public class ResourceChangeObserver {
             return;
         }
 
+        logger.info("Processing resource change for sessionInfo: " + sessionInfo
+                            + ", project: " + module
+                            + ", path: " + path
+                            + ", changeType: " + changeType);
         if (logger.isDebugEnabled()) {
-            logger.debug("Processing resource change for sessionInfo: " + sessionInfo
-                                 + ", project: " + module
-                                 + ", path: " + path
-                                 + ", changeType: " + changeType);
         }
 
         if (isObservableResource(path)) {

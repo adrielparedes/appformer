@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
@@ -126,9 +127,11 @@ public class ResourceChangeIncrementalBuilder {
 
                     //Fall back to a Full Build in lieu of an Incremental Build if the Project has not been previously built
                     if (buildService.isBuilt(module)) {
+                        logger.info("incremental build" + resource.toURI());
                         final IncrementalBuildResults results = buildService.addPackageResource(resource);
                         incrementalBuildResultsEvent.fire(results);
                     } else {
+                        logger.info("full build" + resource.toURI());
                         final BuildResults results = buildService.build(module);
                         buildResultsEvent.fire(results);
                     }
@@ -173,9 +176,11 @@ public class ResourceChangeIncrementalBuilder {
 
                     //Fall back to a Full Build in lieu of an Incremental Build if the Project has not been previously built
                     if (buildService.isBuilt(module)) {
+                        logger.info("incremental build" + resource.toURI());
                         final IncrementalBuildResults results = buildService.deletePackageResource(resource);
                         incrementalBuildResultsEvent.fire(results);
                     } else {
+                        logger.info("full build" + resource.toURI());
                         final BuildResults results = buildService.build(module);
                         buildResultsEvent.fire(results);
                     }
@@ -259,9 +264,11 @@ public class ResourceChangeIncrementalBuilder {
 
                     //Fall back to a Full Build in lieu of an Incremental Build if the Project has not been previously built
                     if (buildService.isBuilt(module)) {
+                        logger.info("incremental build" + resource.toURI());
                         final IncrementalBuildResults results = buildService.updatePackageResource(resource);
                         incrementalBuildResultsEvent.fire(results);
                     } else {
+                        logger.info("full build" + resource.toURI());
                         final BuildResults results = buildService.build(module);
                         buildResultsEvent.fire(results);
                     }
@@ -328,10 +335,12 @@ public class ResourceChangeIncrementalBuilder {
 
                         //Fall back to a Full Build in lieu of an Incremental Build if the Project has not been previously built
                         if (buildService.isBuilt(module)) {
+                            logger.info("incremental build" + e.getKey());
                             final IncrementalBuildResults results = buildService.applyBatchResourceChanges(module,
                                                                                                            changes);
                             incrementalBuildResultsEvent.fire(results);
                         } else {
+                            logger.info("full build" + e.getKey());
                             final BuildResults results = buildService.build(module);
                             buildResultsEvent.fire(results);
                         }

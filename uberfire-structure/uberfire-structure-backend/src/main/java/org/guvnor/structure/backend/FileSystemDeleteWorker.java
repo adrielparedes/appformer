@@ -46,6 +46,7 @@ public class FileSystemDeleteWorker {
     private static final int LAST_ACCESS_THRESHOLD = 10;
     private static final TimeUnit LAST_ACCESS_TIME_UNIT = TimeUnit.SECONDS;
     private static final String LOCK_NAME = "delete.lock";
+    private static final String DELETE_DISABLED = "org.appformer.delete.worker.disabled";
     public static final String CRON_MINUTES = "*/1";
 
     private Logger logger = LoggerFactory.getLogger(FileSystemDeleteWorker.class);
@@ -82,6 +83,15 @@ public class FileSystemDeleteWorker {
 
     @Schedule(hour = "*", minute = CRON_MINUTES, persistent = false)
     public void doRemove() {
+
+        boolean workerDisabled = Boolean.parseBoolean(System.getProperty(DELETE_DISABLED, "false"));
+
+        if (workerDisabled) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Delete worker disabled. Skipping deletion process");
+            }
+            return;
+        }
 
         if (this.busy) {
             return;

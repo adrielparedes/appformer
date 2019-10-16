@@ -89,11 +89,13 @@ public class FileSystemLock {
             RandomAccessFile raf = new RandomAccessFile(file,
                                                         "rw");
             fileChannel = raf.getChannel();
+            LOGGER.info("LOCK: Trying to acquire lock: {} - {}", Thread.currentThread().getName(), file.getAbsolutePath());
             physicalLock = fileChannel.lock();
             fileChannel.position(0);
-            fileChannel.write(ByteBuffer.wrap("locked".getBytes()));
+            fileChannel.write(ByteBuffer.wrap(("Locked " + Thread.currentThread().getName()).getBytes()));
+            LOGGER.info("LOCK: Lock acquired: {} - {}", Thread.currentThread().getName(), file.getAbsolutePath());
         } catch (Exception e) {
-            LOGGER.error("Error during lock of FS [" + repoURI.toString() + " -- " + this.getLockName() + "]",
+            LOGGER.error("LOCK: Error during lock of FS [" + repoURI.toString() + " -- " + this.getLockName() + "]",
                          e);
             throw new RuntimeException(e);
         }
@@ -101,10 +103,13 @@ public class FileSystemLock {
 
     void physicalUnLockOnFS() {
         try {
+            LOGGER.info("LOCK: Releasing Lock {} - {}", Thread.currentThread().getName(), lockFile.toFile().getAbsolutePath());
+            fileChannel.write(ByteBuffer.wrap(("Released " + Thread.currentThread().getName()).getBytes()));
             physicalLock.release();
             fileChannel.close();
             fileChannel = null;
             physicalLock = null;
+            LOGGER.info("LOCK: Lock released {} - {}", Thread.currentThread().getName(), lockFile.toFile().getAbsolutePath());
         } catch (Exception e) {
             LOGGER.error("Error during unlock of FS [" + repoURI.toString() + " -- " + this.getLockName() + "]",
                          e);
