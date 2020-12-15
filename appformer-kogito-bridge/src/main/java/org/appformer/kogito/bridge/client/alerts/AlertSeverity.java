@@ -19,10 +19,6 @@
 
 package org.appformer.kogito.bridge.client.alerts;
 
-import jsinterop.annotations.JsPackage;
-import jsinterop.annotations.JsType;
-
-@JsType(isNative = true, namespace = JsPackage.GLOBAL, name = "Object")
 public enum AlertSeverity {
     INFO,
     WARNING,
