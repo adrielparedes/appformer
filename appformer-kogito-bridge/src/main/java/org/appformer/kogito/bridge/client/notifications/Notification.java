@@ -17,14 +17,14 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.appformer.kogito.bridge.client.notifications;
 
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 
 @JsType(isNative = true, namespace = JsPackage.GLOBAL, name = "Object")
-public class Alert {
+public class Notification {
 
     @JsProperty(name = "path")
     public native void setPath(String path);
@@ -39,8 +39,8 @@ public class Alert {
     public native String getMessage();
 
     @JsProperty(name = "alertSeverity")
-    public native void setSeverity(AlertSeverity alertSeverity);
+    public native void setSeverity(NotificationSeverity notificationSeverity);
 
     @JsProperty(name = "alertSeverity")
-    public native AlertSeverity getSeverity();
+    public native NotificationSeverity getSeverity();
 }

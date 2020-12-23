@@ -17,11 +17,15 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.appformer.kogito.bridge.client.notifications;
 
-public enum AlertSeverity {
-    INFO,
-    WARNING,
-    ERROR,
-    SUCCESS
+import java.util.List;
+
+public interface NotificationsApi {
+
+    void send(Notification notification);
+
+    void set(String path, List<Notification> notification);
+
+    void delete(String path);
 }

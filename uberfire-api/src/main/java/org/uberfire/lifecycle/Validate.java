@@ -17,24 +17,17 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.uberfire.lifecycle;
 
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class AlertsService implements AlertsApi {
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface Validate {
 
-    @Override
-    public void send(Alert alert) {
-        AlertsApiInteropWrapper.get().send(alert);
-    }
-
-    @Override
-    public void set(String path, List<Alert> alerts) {
-        AlertsApiInteropWrapper.get().set(path, alerts);
-    }
-
-    @Override
-    public void delete(String path) {
-        AlertsApiInteropWrapper.get().delete(path);
-    }
 }

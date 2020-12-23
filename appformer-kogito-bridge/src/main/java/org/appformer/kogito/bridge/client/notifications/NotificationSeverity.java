@@ -17,17 +17,11 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.appformer.kogito.bridge.client.notifications;
 
-import java.util.List;
-
-import jsinterop.annotations.JsMethod;
-
-public interface AlertsApi {
-
-    void send(Alert alert);
-
-    void set(String path, List<Alert> alert);
-
-    void delete(String path);
+public enum NotificationSeverity {
+    INFO,
+    WARNING,
+    ERROR,
+    SUCCESS
 }

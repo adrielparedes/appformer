@@ -17,19 +17,19 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.appformer.kogito.bridge.client.notifications;
 
 import java.util.List;
 
-public class NoOpAlertsService implements AlertsApi {
+public class NoOpNotificationsService implements NotificationsApi {
 
     @Override
-    public void send(Alert alert) {
+    public void send(Notification notification) {
         
     }
 
     @Override
-    public void set(String path, List<Alert> alert) {
+    public void set(String path, List<Notification> notification) {
 
     }
 

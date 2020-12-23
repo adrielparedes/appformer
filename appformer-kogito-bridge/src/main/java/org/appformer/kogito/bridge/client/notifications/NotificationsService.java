@@ -17,24 +17,24 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.appformer.kogito.bridge.client.notifications;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import java.util.List;
 
-import elemental2.dom.DomGlobal;
-import org.appformer.kogito.bridge.client.interop.WindowRef;
+public class NotificationsService implements NotificationsApi {
 
-public class AlertsServiceProducer {
+    @Override
+    public void send(Notification notification) {
+        NotificationsApiInteropWrapper.get().send(notification);
+    }
 
-    @Produces
-    @ApplicationScoped
-    public AlertsApi produce() {
-        if (WindowRef.isEnvelopeAvailable()) {
-            return new AlertsService();
-        } else {
-            DomGlobal.console.debug("[AlertsServiceProducer] Envelope API is not available. Producing NoOpAlertsService");
-            return new NoOpAlertsService();
-        }
+    @Override
+    public void set(String path, List<Notification> notifications) {
+        NotificationsApiInteropWrapper.get().set(path, notifications);
+    }
+
+    @Override
+    public void delete(String path) {
+        NotificationsApiInteropWrapper.get().delete(path);
     }
 }

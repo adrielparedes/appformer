@@ -17,7 +17,7 @@
  *
  */
 
-package org.appformer.kogito.bridge.client.alerts;
+package org.appformer.kogito.bridge.client.notifications;
 
 import java.util.List;
 
@@ -26,17 +26,17 @@ import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 
 @JsType(isNative = true, namespace = "window", name = "envelope")
-public class AlertsApiInteropWrapper {
+public class NotificationsApiInteropWrapper {
 
     @JsMethod
-    public native void send(Alert alert);
+    public native void send(Notification notification);
 
     @JsMethod
-    public native void set(String path, List<Alert> alert);
+    public native void set(String path, List<Notification> notification);
 
     @JsMethod
     public native void delete(String path);
 
-    @JsProperty(name = "alertsApi")
-    public native static AlertsApiInteropWrapper get();
+    @JsProperty(name = "notificationsApi")
+    public native static NotificationsApiInteropWrapper get();
 }
